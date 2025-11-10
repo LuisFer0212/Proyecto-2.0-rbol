@@ -9,6 +9,7 @@ namespace Proyecto_2_Arbol
         static void Main()
         {
             Application.EnableVisualStyles();
+            Application.SetHighDpiMode(HighDpiMode.SystemAware); // 👈 evita interfaz borrosa
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
         }

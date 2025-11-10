@@ -11,7 +11,6 @@ namespace Proyecto_2_Arbol
         private Button btnFamilia;
         private Button btnMapa;
         private Button btnEstadisticas;
-        private Button btnAcerca;
         private Button btnSalir;
         private Panel panelContenido;
 
@@ -19,81 +18,93 @@ namespace Proyecto_2_Arbol
         {
             // === Ventana principal ===
             Text = "Árbol Genealógico - Proyecto 2";
-            Width = 1000;
+            Width = 1100;
             Height = 700;
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedSingle;
-            MaximizeBox = false;
-            BackColor = Color.White;
+            BackColor = ColorTranslator.FromHtml("#F4F6FA");
+            Font = new Font("Segoe UI", 11, FontStyle.Regular);
 
-            // === Panel lateral de menú ===
+            // === Panel lateral ===
             panelMenu = new Panel
             {
                 Dock = DockStyle.Left,
-                Width = 220,
-                BackColor = Color.FromArgb(40, 40, 60)
+                Width = 230,
+                BackColor = ColorTranslator.FromHtml("#283142")
             };
             Controls.Add(panelMenu);
 
-            // === Título del menú ===
+            // === Título ===
             lblTitulo = new Label
             {
-                Text = "Proyecto 2\nÁrbol Genealógico",
+                Text = "🌳 Árbol Genealógico",
                 ForeColor = Color.White,
-                Font = new Font("Segoe UI", 12, FontStyle.Bold),
+                Font = new Font("Segoe UI", 14, FontStyle.Bold),
                 Dock = DockStyle.Top,
                 Height = 100,
                 TextAlign = ContentAlignment.MiddleCenter
             };
             panelMenu.Controls.Add(lblTitulo);
 
-            // === Botones del menú ===
-            btnFamilia = CrearBotonMenu("👨‍👩‍👧 Gestionar Familiares", 120);
-            btnMapa = CrearBotonMenu("🗺️ Ver Mapa", 180);
-            btnEstadisticas = CrearBotonMenu("📊 Estadísticas", 240);
-            btnAcerca = CrearBotonMenu("ℹ️ Acerca de", 300);
-            btnSalir = CrearBotonMenu("🚪 Salir", 360);
+            // === Botones menú ===
+            btnFamilia = CrearBotonMenu("👨‍👩‍👧 Gestionar Familia");
+            btnMapa = CrearBotonMenu("🗺️ Ver Mapa");
+            btnEstadisticas = CrearBotonMenu("📊 Estadísticas");
+            btnSalir = CrearBotonMenu("🚪 Salir");
 
-            panelMenu.Controls.AddRange(new Control[] { btnFamilia, btnMapa, btnEstadisticas, btnAcerca, btnSalir });
+            // Posiciones verticales
+            int top = 130;
+            foreach (var boton in new[] { btnFamilia, btnMapa, btnEstadisticas, btnSalir })
+            {
+                boton.Top = top;
+                top += 60;
+                panelMenu.Controls.Add(boton);
+            }
 
-            // === Panel de contenido principal ===
+            // === Panel contenido (para el árbol genealógico) ===
             panelContenido = new Panel
             {
                 Dock = DockStyle.Fill,
-                BackColor = Color.WhiteSmoke
+                BackColor = ColorTranslator.FromHtml("#F4F6FA")
             };
             Controls.Add(panelContenido);
 
-            // Eventos
+            // === Eventos ===
             btnSalir.Click += (s, e) => Close();
-            btnMapa.Click += (s, e) =>
-            {
-                // Aquí abrimos tu mapa
-                MapaForm mapa = new MapaForm();
-                mapa.ShowDialog();
-            };
             btnFamilia.Click += (s, e) =>
             {
-                FamiliaForm ventana = new FamiliaForm();
-                ventana.ShowDialog();
+                new FamiliaForm().ShowDialog();
             };
-
+            btnMapa.Click += (s, e) =>
+            {
+                new MapaForm().ShowDialog();
+            };
+            btnEstadisticas.Click += (s, e) =>
+            {
+                MessageBox.Show("Sección de estadísticas (interfaz próximamente).", "Estadísticas", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            };
         }
 
-        private Button CrearBotonMenu(string texto, int top)
+        private Button CrearBotonMenu(string texto)
         {
-            return new Button
+            var btn = new Button
             {
                 Text = texto,
                 Width = 200,
-                Height = 40,
-                Top = top,
-                Left = 10,
+                Height = 45,
+                Left = 15,
                 FlatStyle = FlatStyle.Flat,
-                Font = new Font("Segoe UI", 10, FontStyle.Regular),
+                BackColor = ColorTranslator.FromHtml("#4C6EF5"),
                 ForeColor = Color.White,
-                BackColor = Color.FromArgb(60, 60, 80)
+                Font = new Font("Segoe UI", 11, FontStyle.Regular),
+                Cursor = Cursors.Hand
             };
+            btn.FlatAppearance.BorderSize = 0;
+
+            // Efecto hover
+            btn.MouseEnter += (s, e) => btn.BackColor = ColorTranslator.FromHtml("#3B5BDB");
+            btn.MouseLeave += (s, e) => btn.BackColor = ColorTranslator.FromHtml("#4C6EF5");
+            return btn;
         }
     }
 }
