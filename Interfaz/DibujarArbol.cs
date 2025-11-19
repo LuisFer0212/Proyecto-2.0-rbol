@@ -1,81 +1,468 @@
+// Archivo: DibujarArbol.cs
+// Lienzo donde se dibuja el árbol genealógico en la interfaz.
+
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.IO;
 using System.Windows.Forms;
 
 namespace Proyecto_2_Arbol
 {
+    // Control que pinta los nodos del árbol y responde a los clics del usuario.
     public class TreeCanvas : Control
     {
-        public TreeCanvas()
+        // Referencia al árbol de la parte de lógica.
+        private readonly ArbolGenealogico arbol;
+
+        // Lista de nodos tal y como se dibujan en pantalla.
+        private readonly List<NodoVisual> nodosVisuales = new List<NodoVisual>();
+
+        // Representación visual de un familiar en el lienzo.
+        private class NodoVisual
         {
+            public Familiar Familiar { get; }
+            public Point Centro { get; set; }
+            public int Radio { get; }
+
+            public NodoVisual(Familiar familiar, Point centro, int radio)
+            {
+                Familiar = familiar;
+                Centro = centro;
+                Radio = radio;
+            }
+
+            public bool ContienePunto(Point p)
+            {
+                int dx = p.X - Centro.X;
+                int dy = p.Y - Centro.Y;
+                return dx * dx + dy * dy <= Radio * Radio;
+            }
+        }
+
+        // Estructura interna para el recorrido por niveles.
+        private struct NodoNivel
+        {
+            public Familiar Familiar;
+            public int Nivel;
+
+            public NodoNivel(Familiar familiar, int nivel)
+            {
+                Familiar = familiar;
+                Nivel = nivel;
+            }
+        }
+
+        public TreeCanvas(ArbolGenealogico arbol)
+        {
+            this.arbol = arbol ?? throw new ArgumentNullException(nameof(arbol));
+
             DoubleBuffered = true;
             ResizeRedraw = true;
             BackColor = Theme.Card;
             ForeColor = Theme.TextPrimary;
         }
 
+        // Redibuja el contenido del control.
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
+
             var g = e.Graphics;
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.Clear(Theme.Card);
 
-            // Título del área
-            using (var titleFont = new Font("Segoe UI", 12, FontStyle.Bold))
-            using (var titleBrush = new SolidBrush(Theme.TextPrimary))
+            nodosVisuales.Clear();
+
+            if (!arbol.TieneMiembros || arbol.Raiz == null)
             {
-                g.DrawString("Vista del árbol (interfaz, sin lógica)", titleFont, titleBrush, 16, 12);
+                DibujarMensajeSinDatos(g);
+                return;
             }
 
-            // Ejemplo estático de 5 nodos conectados (solo UI de muestra)
-            // Posiciones base
-            var root = new Point(Width/2, 110);
-            var c1   = new Point(Width/2 - 200, 250);
-            var c2   = new Point(Width/2 + 200, 250);
-            var g1   = new Point(c1.X - 120, 390);
-            var g2   = new Point(c1.X + 120, 390);
-
-            // Líneas (conectores)
-            using var pen = new Pen(Theme.Line, 2);
-            g.DrawLine(pen, root, c1);
-            g.DrawLine(pen, root, c2);
-            g.DrawLine(pen, c1, g1);
-            g.DrawLine(pen, c1, g2);
-
-            // Dibujo de “cards” para cada nodo (círculo + nombre + mini-foto placeholder)
-            DrawNode(g, root, "Raíz",     "foto_root");
-            DrawNode(g, c1,   "Hijo A",   "foto_A");
-            DrawNode(g, c2,   "Hijo B",   "foto_B");
-            DrawNode(g, g1,   "Nieto A1", "foto_A1");
-            DrawNode(g, g2,   "Nieto A2", "foto_A2");
+            DibujarArbol(g);
         }
 
-        private void DrawNode(Graphics g, Point center, string name, string photoKey)
+        // Manejo de clics para crear el primer familiar o agregar hijo/pareja.
+        protected override void OnMouseClick(MouseEventArgs e)
         {
-            int r = 36; // radio del círculo
-            var circleRect = new Rectangle(center.X - r, center.Y - r, r*2, r*2);
+            base.OnMouseClick(e);
 
-            using var circleBrush = new SolidBrush(Color.FromArgb(220, Theme.Btn));
-            using var borderPen   = new Pen(Theme.BtnHover, 3);
-            g.FillEllipse(circleBrush, circleRect);
-            g.DrawEllipse(borderPen, circleRect);
+            if (e.Button != MouseButtons.Left)
+                return;
 
-            // Placeholder de “foto” (inicial)
-            string initial = string.IsNullOrWhiteSpace(name) ? "?" : name.Trim()[0].ToString().ToUpperInvariant();
-            using var f = new Font("Segoe UI", 12, FontStyle.Bold);
-            var sz = g.MeasureString(initial, f);
-            var ip = new PointF(center.X - sz.Width/2, center.Y - sz.Height/2);
-            using var textOnCircle = new SolidBrush(Color.White);
-            g.DrawString(initial, f, textOnCircle, ip);
+            // Si aún no hay miembros, cualquier clic crea el primero.
+            if (!arbol.TieneMiembros)
+            {
+                using (var ventana = new GestionarFamilia(arbol, null, true))
+                {
+                    if (ventana.ShowDialog(FindForm()) == DialogResult.OK)
+                        Invalidate();
+                }
+                return;
+            }
 
-            // Nombre debajo
-            using var nameFont = new Font("Segoe UI", 10, FontStyle.Regular);
-            using var nameBrush = new SolidBrush(Theme.TextPrimary);
-            var nameSize = g.MeasureString(name, nameFont);
-            var namePt = new PointF(center.X - nameSize.Width/2, center.Y + r + 8);
-            g.DrawString(name, nameFont, nameBrush, namePt);
+            // Buscar si se hizo clic sobre algún nodo.
+            NodoVisual? seleccionado = null;
+            foreach (var nodo in nodosVisuales)
+            {
+                if (nodo.ContienePunto(e.Location))
+                {
+                    seleccionado = nodo;
+                    break;
+                }
+            }
+
+            // Si se hizo clic en un familiar, se abre la ventana para agregar hijo o pareja.
+            if (seleccionado != null)
+            {
+                using (var ventana = new GestionarFamilia(arbol, seleccionado.Familiar, false))
+                {
+                    if (ventana.ShowDialog(FindForm()) == DialogResult.OK)
+                        Invalidate();
+                }
+            }
+        }
+
+        // Mensaje cuando todavía no se ha registrado ningún familiar.
+        private void DibujarMensajeSinDatos(Graphics g)
+        {
+            using var fuente = new Font("Segoe UI", 11, FontStyle.Italic);
+            using var pincel = new SolidBrush(Theme.TextPrimary);
+
+            string texto = "No hay integrantes en el árbol.\n" +
+                           "Haga clic en el área en blanco para registrar el primero.";
+
+            var tamaño = g.MeasureString(texto, fuente);
+            float x = (Width - tamaño.Width) / 2f;
+            float y = (Height - tamaño.Height) / 2f;
+
+            g.DrawString(texto, fuente, pincel, x, y);
+        }
+
+        // Calcula niveles, acomoda parejas juntas y dibuja todo el árbol.
+        private void DibujarArbol(Graphics g)
+        {
+            if (arbol.Raiz == null)
+                return;
+
+            var niveles = CalcularNiveles();
+
+            // Primero ubicamos la posición de todos los nodos.
+            int indiceNivel = 0;
+            foreach (var kvp in niveles)
+            {
+                var familiaresNivel = kvp.Value;
+                int y = 150 + indiceNivel * 160;
+
+                var grupos = AgruparPorParejas(familiaresNivel);
+
+                int espacioEntreGrupos = 170;
+                int anchoTotal = (grupos.Count - 1) * espacioEntreGrupos;
+                int inicioX = (Width / 2) - (anchoTotal / 2);
+
+                foreach (var grupo in grupos)
+                {
+                    if (grupo.Count == 1)
+                    {
+                        var fam = grupo[0];
+                        var centro = new Point(inicioX, y);
+                        AgregarNodoVisualSiNoExiste(fam, centro);
+                    }
+                    else if (grupo.Count == 2)
+                    {
+                        int separacion = 90;
+                        var fam1 = grupo[0];
+                        var fam2 = grupo[1];
+
+                        var centro1 = new Point(inicioX - separacion / 2, y);
+                        var centro2 = new Point(inicioX + separacion / 2, y);
+
+                        AgregarNodoVisualSiNoExiste(fam1, centro1);
+                        AgregarNodoVisualSiNoExiste(fam2, centro2);
+                    }
+
+                    inicioX += espacioEntreGrupos;
+                }
+
+                indiceNivel++;
+            }
+
+            // Luego se dibujan las conexiones (parejas e hijos).
+            DibujarConexiones(g);
+
+            // Por último los círculos con la foto y los nombres.
+            foreach (var nodo in nodosVisuales)
+            {
+                DibujarNodo(g, nodo);
+            }
+        }
+
+        // Si el familiar ya existe en la lista, solo se actualiza su centro.
+        private void AgregarNodoVisualSiNoExiste(Familiar fam, Point centro)
+        {
+            foreach (var n in nodosVisuales)
+            {
+                if (ReferenceEquals(n.Familiar, fam))
+                {
+                    n.Centro = centro;
+                    return;
+                }
+            }
+
+            nodosVisuales.Add(new NodoVisual(fam, centro, 35));
+        }
+
+        // Agrupa los familiares de un nivel para que las parejas queden juntas.
+        private List<List<Familiar>> AgruparPorParejas(List<Familiar> familiaresNivel)
+        {
+            var grupos = new List<List<Familiar>>();
+            var usados = new HashSet<Familiar>();
+
+            foreach (var fam in familiaresNivel)
+            {
+                if (usados.Contains(fam))
+                    continue;
+
+                if (fam.Pareja != null &&
+                    familiaresNivel.Contains(fam.Pareja) &&
+                    !usados.Contains(fam.Pareja))
+                {
+                    grupos.Add(new List<Familiar> { fam, fam.Pareja });
+                    usados.Add(fam);
+                    usados.Add(fam.Pareja);
+                }
+                else
+                {
+                    grupos.Add(new List<Familiar> { fam });
+                    usados.Add(fam);
+                }
+            }
+
+            return grupos;
+        }
+
+        // Calcula el nivel (generación) de cada familiar a partir de la raíz.
+        private Dictionary<int, List<Familiar>> CalcularNiveles()
+        {
+            var niveles = new Dictionary<int, List<Familiar>>();
+            var visitados = new HashSet<Familiar>();
+            var cola = new Queue<NodoNivel>();
+
+            if (arbol.Raiz == null)
+                return niveles;
+
+            cola.Enqueue(new NodoNivel(arbol.Raiz, 0));
+            visitados.Add(arbol.Raiz);
+
+            while (cola.Count > 0)
+            {
+                var elemento = cola.Dequeue();
+                var familiar = elemento.Familiar;
+                int nivel = elemento.Nivel;
+
+                if (!niveles.TryGetValue(nivel, out var listaNivel))
+                {
+                    listaNivel = new List<Familiar>();
+                    niveles[nivel] = listaNivel;
+                }
+
+                if (!listaNivel.Contains(familiar))
+                    listaNivel.Add(familiar);
+
+                // Hijos en el siguiente nivel (PrimerHijo / HermanoDerecho).
+                var hijo = familiar.PrimerHijo;
+                while (hijo != null)
+                {
+                    if (!visitados.Contains(hijo))
+                    {
+                        visitados.Add(hijo);
+                        cola.Enqueue(new NodoNivel(hijo, nivel + 1));
+                    }
+                    hijo = hijo.HermanoDerecho;
+                }
+
+                // Pareja en el mismo nivel (familia política).
+                if (familiar.Pareja != null && !visitados.Contains(familiar.Pareja))
+                {
+                    visitados.Add(familiar.Pareja);
+                    cola.Enqueue(new NodoNivel(familiar.Pareja, nivel));
+                }
+            }
+
+            return niveles;
+        }
+
+        // Dibuja líneas entre parejas y desde la pareja (o el padre) hacia los hijos.
+        private void DibujarConexiones(Graphics g)
+        {
+            if (nodosVisuales.Count == 0)
+                return;
+
+            var mapa = new Dictionary<Familiar, NodoVisual>();
+            foreach (var nodo in nodosVisuales)
+            {
+                mapa[nodo.Familiar] = nodo;
+            }
+
+            using var penLinea = new Pen(Theme.Line, 2);
+
+            // Línea horizontal entre parejas.
+            var parejasMarcadas = new HashSet<Familiar>();
+            foreach (var nodo in nodosVisuales)
+            {
+                var fam = nodo.Familiar;
+                if (fam.Pareja == null || parejasMarcadas.Contains(fam))
+                    continue;
+
+                if (mapa.TryGetValue(fam.Pareja, out var nodoPareja))
+                {
+                    g.DrawLine(penLinea, nodo.Centro, nodoPareja.Centro);
+                    parejasMarcadas.Add(fam);
+                    parejasMarcadas.Add(fam.Pareja);
+                }
+            }
+
+            // Líneas hacia los hijos.
+            foreach (var nodoHijo in nodosVisuales)
+            {
+                var hijo = nodoHijo.Familiar;
+                if (hijo.Progenitor == null)
+                    continue;
+
+                if (!mapa.TryGetValue(hijo.Progenitor, out var nodoPadre))
+                    continue;
+
+                Point origenSuperior;
+
+                if (hijo.Progenitor.Pareja != null &&
+                    mapa.TryGetValue(hijo.Progenitor.Pareja, out var nodoParejaH))
+                {
+                    // Punto de unión entre la pareja.
+                    int unionX = (nodoPadre.Centro.X + nodoParejaH.Centro.X) / 2;
+                    int unionY = nodoPadre.Centro.Y + nodoPadre.Radio + 6;
+
+                    var puntoUnion = new Point(unionX, unionY);
+
+                    // Líneas cortas desde cada integrante hacia el punto de unión.
+                    g.DrawLine(
+                        penLinea,
+                        new Point(nodoPadre.Centro.X, nodoPadre.Centro.Y + nodoPadre.Radio),
+                        puntoUnion
+                    );
+
+                    g.DrawLine(
+                        penLinea,
+                        new Point(nodoParejaH.Centro.X, nodoParejaH.Centro.Y + nodoParejaH.Radio),
+                        puntoUnion
+                    );
+
+                    origenSuperior = puntoUnion;
+                }
+                else
+                {
+                    // Solo hay un progenitor conocido.
+                    origenSuperior = new Point(
+                        nodoPadre.Centro.X,
+                        nodoPadre.Centro.Y + nodoPadre.Radio
+                    );
+                }
+
+                var destinoInferior = new Point(
+                    nodoHijo.Centro.X,
+                    nodoHijo.Centro.Y - nodoHijo.Radio
+                );
+
+                g.DrawLine(penLinea, origenSuperior, destinoInferior);
+            }
+        }
+
+        // Dibuja el círculo del nodo, la foto y el nombre debajo.
+        private void DibujarNodo(Graphics g, NodoVisual nodo)
+        {
+            int r = nodo.Radio;
+            var rect = new Rectangle(nodo.Centro.X - r, nodo.Centro.Y - r, r * 2, r * 2);
+
+            // Colores para diferenciar familia principal y familia política.
+            // Familia principal: azul intenso.
+            // Familia política: gris.
+            Color colorBorde = nodo.Familiar.EsFamiliaPolitica
+                ? Color.FromArgb(0xAD, 0xB5, 0xBD) // gris suave
+                : Color.FromArgb(0x4C, 0x6E, 0xF5); // azul similar al encabezado
+
+            // Intento de cargar la foto asociada al familiar.
+            bool dibujoFoto = false;
+            if (!string.IsNullOrWhiteSpace(nodo.Familiar.RutaFoto) &&
+                File.Exists(nodo.Familiar.RutaFoto))
+            {
+                try
+                {
+                    using (var imagen = Image.FromFile(nodo.Familiar.RutaFoto))
+                    {
+                        using var rutaCircular = new GraphicsPath();
+                        rutaCircular.AddEllipse(rect);
+
+                        g.SetClip(rutaCircular);
+                        g.DrawImage(imagen, rect);
+                        g.ResetClip();
+
+                        dibujoFoto = true;
+                    }
+                }
+                catch
+                {
+                    // Si hay un problema con la imagen, se cae al modo sin foto.
+                    dibujoFoto = false;
+                }
+            }
+
+            // Si no hay foto válida, se dibuja un círculo de fondo.
+            if (!dibujoFoto)
+            {
+                using var relleno = new SolidBrush(Color.FromArgb(220, Theme.Btn));
+                g.FillEllipse(relleno, rect);
+            }
+
+            // Borde del círculo según el tipo de familiar.
+            using (var borde = new Pen(colorBorde, 3))
+            {
+                g.DrawEllipse(borde, rect);
+            }
+
+            string nombre = nodo.Familiar.Nombre ?? string.Empty;
+            string inicial = string.IsNullOrWhiteSpace(nombre)
+                ? "?"
+                : nombre.Trim()[0].ToString().ToUpperInvariant();
+
+            // Si no se dibujó foto, se pone la inicial en el centro del círculo.
+            if (!dibujoFoto)
+            {
+                using var fuenteInicial = new Font("Segoe UI", 12, FontStyle.Bold);
+                var tamañoInicial = g.MeasureString(inicial, fuenteInicial);
+                var puntoInicial = new PointF(
+                    nodo.Centro.X - tamañoInicial.Width / 2f,
+                    nodo.Centro.Y - tamañoInicial.Height / 2f
+                );
+
+                using var pincelBlanco = new SolidBrush(Color.White);
+                g.DrawString(inicial, fuenteInicial, pincelBlanco, puntoInicial);
+            }
+
+            // Nombre debajo del nodo.
+            FontStyle estiloNombre = nodo.Familiar.EsFamiliaPolitica
+                ? FontStyle.Regular
+                : FontStyle.Underline;
+
+            using var fuenteNombre = new Font("Segoe UI", 10, estiloNombre);
+            using var pincelNombre = new SolidBrush(Theme.TextPrimary);
+            var tamañoNombre = g.MeasureString(nombre, fuenteNombre);
+            var puntoNombre = new PointF(
+                nodo.Centro.X - tamañoNombre.Width / 2f,
+                nodo.Centro.Y + r + 6
+            );
+
+            g.DrawString(nombre, fuenteNombre, pincelNombre, puntoNombre);
         }
     }
 }

@@ -4,23 +4,44 @@ using System.Windows.Forms;
 
 namespace Proyecto_2_Arbol
 {
+    // Ventana principal de la aplicación.
+    // Desde aquí se puede acceder al mapa, a las estadísticas y al árbol genealógico.
     public class MainForm : Form
     {
+        // Árbol genealógico principal de la aplicación.
+        private readonly ArbolGenealogico arbol;
+
+        // Panel lateral del menú.
         private Panel panelMenu;
+
+        // Etiqueta del título principal.
         private Label lblTitulo;
-        private Button btnFamilia, btnMapa, btnEstadisticas, btnSalir, btnDark;
+
+        // Botones del menú lateral.
+        private Button btnMapa;
+        private Button btnEstadisticas;
+        private Button btnEliminarArbol;
+        private Button btnSalir;
+
+        // Panel donde se muestra el contenido central.
         private Panel panelContenido;
+
+        // Lienzo donde se dibuja el árbol genealógico.
         private TreeCanvas canvas;
 
+        // Constructor de la ventana principal.
+        // Crea el árbol, arma la interfaz y aplica los colores del tema visual.
         public MainForm()
         {
+            arbol = new ArbolGenealogico();
             BuildUI();
             ApplyTheme();
         }
 
+        // Construye la interfaz gráfica de la ventana principal.
         private void BuildUI()
         {
-            // === Ventana principal ===
+            // Configuración general de la ventana.
             Text = "Árbol Genealógico - Proyecto 2";
             Width = 1100;
             Height = 700;
@@ -29,28 +50,28 @@ namespace Proyecto_2_Arbol
             Font = new Font("Segoe UI", 11);
             DoubleBuffered = true;
 
-            // === Panel de contenido (donde va el árbol) ===
+            // Panel central de contenido.
             panelContenido = new Panel
             {
                 Dock = DockStyle.Fill,
                 Padding = new Padding(16)
             };
 
-            // Lienzo del árbol (solo interfaz, sin lógica)
-            canvas = new TreeCanvas
+            // Lienzo del árbol.
+            canvas = new TreeCanvas(arbol)
             {
                 Dock = DockStyle.Fill
             };
             panelContenido.Controls.Add(canvas);
 
-            // === Panel lateral (menú) ===
+            // Panel lateral del menú.
             panelMenu = new Panel
             {
                 Dock = DockStyle.Left,
                 Width = 230
             };
 
-            // Título
+            // Título del panel lateral.
             lblTitulo = new Label
             {
                 Text = "🌳 Árbol Genealógico",
@@ -61,52 +82,50 @@ namespace Proyecto_2_Arbol
             };
             panelMenu.Controls.Add(lblTitulo);
 
-            // Botones del menú
-            btnFamilia = CreateMenuButton("👨‍👩‍👧 Gestionar Familia");
+            // Creación de los botones del menú.
             btnMapa = CreateMenuButton("🗺️ Ver Mapa");
             btnEstadisticas = CreateMenuButton("📊 Estadísticas");
-            btnDark = CreateMenuButton("🌙 Modo oscuro");
+            btnEliminarArbol = CreateMenuButton("🧹 Eliminar árbol");
             btnSalir = CreateMenuButton("🚪 Salir");
 
+            // Ubicación vertical de los botones dentro del panel lateral.
             int top = 130;
-            foreach (var b in new[] { btnFamilia, btnMapa, btnEstadisticas, btnDark, btnSalir })
+            foreach (var boton in new[] { btnMapa, btnEstadisticas, btnEliminarArbol, btnSalir })
             {
-                b.Top = top;
-                b.Left = 15;
-                panelMenu.Controls.Add(b);
+                boton.Top = top;
+                boton.Left = 15;
+                panelMenu.Controls.Add(boton);
                 top += 60;
             }
 
-            // === Agregar paneles al formulario ===
-            // IMPORTANTE: primero el contenido, luego el menú (para que no lo tape)
+            // Se agregan los paneles al formulario.
             Controls.Add(panelContenido);
             Controls.Add(panelMenu);
 
-            // === Eventos de botones ===
+            // Eventos de los botones.
+
+            // Cierra la aplicación.
             btnSalir.Click += (s, e) => Close();
 
-            btnFamilia.Click += (s, e) =>
-            {
-                new FamiliaForm().ShowDialog();
-            };
-
+            // Abre la ventana del mapa.
             btnMapa.Click += (s, e) =>
             {
-                new MapaForm().ShowDialog();
+                var formMapa = new MapaForm();
+                formMapa.ShowDialog();
             };
 
+            // Abre la ventana de estadísticas.
             btnEstadisticas.Click += (s, e) =>
             {
-                new StatisticsForm().ShowDialog();
+                var formEstadisticas = new StatisticsForm();
+                formEstadisticas.ShowDialog();
             };
 
-            btnDark.Click += (s, e) =>
-            {
-                Theme.Dark = !Theme.Dark;
-                ApplyTheme();
-            };
+            // Elimina todo el árbol y limpia el lienzo.
+            btnEliminarArbol.Click += BtnEliminarArbol_Click;
         }
 
+        // Crea un botón con el estilo usado en el menú lateral.
         private Button CreateMenuButton(string text)
         {
             var btn = new Button
@@ -118,52 +137,84 @@ namespace Proyecto_2_Arbol
                 Cursor = Cursors.Hand,
                 Font = new Font("Segoe UI", 11, FontStyle.Regular)
             };
+
             btn.FlatAppearance.BorderSize = 0;
             return btn;
         }
 
+        // Maneja el clic del botón que elimina el árbol genealógico.
+        private void BtnEliminarArbol_Click(object? sender, EventArgs e)
+        {
+            var resultado = MessageBox.Show(
+                "¿Seguro que desea eliminar el árbol genealógico actual?\nEsta acción no se puede deshacer.",
+                "Confirmar eliminación",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning
+            );
+
+            if (resultado == DialogResult.Yes)
+            {
+                arbol.Limpiar();
+                canvas.Invalidate();
+
+                MessageBox.Show(
+                    "El árbol se eliminó correctamente.",
+                    "Información",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information
+                );
+            }
+        }
+
+        // Aplica los colores definidos en la clase Theme a la ventana principal y a sus controles.
         private void ApplyTheme()
         {
-            // Colores generales
+            // Colores de fondo generales.
             BackColor = Theme.BgMain;
             panelMenu.BackColor = Theme.BgPane;
             lblTitulo.ForeColor = Theme.TextOnPane;
 
-            // Aplicar tema a todos los botones del menú
-            foreach (Control c in panelMenu.Controls)
+            // Estilo para los botones del menú lateral.
+            foreach (Control control in panelMenu.Controls)
             {
-                if (c is Button b)
+                if (control is Button boton)
                 {
-                    b.BackColor = Theme.Btn;
-                    b.ForeColor = Color.White;
+                    boton.BackColor = Theme.Btn;
+                    boton.ForeColor = Color.White;
 
-                    // Efecto hover
-                    b.MouseEnter -= HoverIn;
-                    b.MouseLeave -= HoverOut;
-                    b.MouseEnter += HoverIn;
-                    b.MouseLeave += HoverOut;
+                    // Eventos de resaltado al pasar el puntero.
+                    boton.MouseEnter -= HoverIn;
+                    boton.MouseLeave -= HoverOut;
+                    boton.MouseEnter += HoverIn;
+                    boton.MouseLeave += HoverOut;
                 }
             }
 
-            // Aplicar tema al panel de contenido y al lienzo
+            // Colores en el área de contenido y el lienzo del árbol.
             panelContenido.BackColor = Theme.BgMain;
             canvas.BackColor = Theme.Card;
             canvas.ForeColor = Theme.TextPrimary;
 
-            // Forzar repintado
+            // Se solicita un repintado del lienzo.
             canvas.Invalidate();
         }
 
+        // Cambia el fondo del botón cuando el puntero entra en la zona del botón.
         private void HoverIn(object? sender, EventArgs e)
         {
-            if (sender is Button b)
-                b.BackColor = Theme.BtnHover;
+            if (sender is Button boton)
+            {
+                boton.BackColor = Theme.BtnHover;
+            }
         }
 
+        // Restaura el fondo del botón cuando el puntero sale del botón.
         private void HoverOut(object? sender, EventArgs e)
         {
-            if (sender is Button b)
-                b.BackColor = Theme.Btn;
+            if (sender is Button boton)
+            {
+                boton.BackColor = Theme.Btn;
+            }
         }
     }
 }
