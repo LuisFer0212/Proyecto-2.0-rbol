@@ -310,10 +310,10 @@ namespace Proyecto_2_Arbol
             Color bordePrincipal = Color.FromArgb(0, 153, 51); // verde fuerte
             Color bordePolitica = Color.FromArgb(192, 64, 0);  // naranja rojizo
 
-            using var penPareja = new Pen(Theme.Line, 2);            // líneas horizontales de pareja
-            using var penConsanguineo = new Pen(bordePrincipal, 3);  // líneas hacia hijos (siempre familia de sangre)
+            using var penPareja = new Pen(Theme.Line, 2);            // gris: pareja y uniones de política
+            using var penConsanguineo = new Pen(bordePrincipal, 3);  // verde: descendencia de sangre
 
-            // Línea horizontal entre parejas (neutral).
+            // Línea horizontal entre parejas (gris).
             var parejasMarcadas = new HashSet<Familiar>();
             foreach (var nodo in nodosVisuales)
             {
@@ -329,7 +329,7 @@ namespace Proyecto_2_Arbol
                 }
             }
 
-            // Líneas hacia los hijos (siempre color de familia de sangre).
+            // Líneas hacia los hijos.
             foreach (var nodoHijo in nodosVisuales)
             {
                 var hijo = nodoHijo.Familiar;
@@ -350,24 +350,31 @@ namespace Proyecto_2_Arbol
 
                     var puntoUnion = new Point(unionX, unionY);
 
-                    // Líneas cortas desde cada integrante hacia el punto de unión (mismo color consanguíneo).
+                    // Desde el punto de unión a cada integrante:
+                    //   - verde si es familia de sangre
+                    //   - gris si es familia política
+                    var penPadreUnion = nodoPadre.Familiar.EsFamiliaPolitica ? penPareja : penConsanguineo;
+                    var penParejaUnion = nodoParejaH.Familiar.EsFamiliaPolitica ? penPareja : penConsanguineo;
+
                     g.DrawLine(
-                        penConsanguineo,
+                        penPadreUnion,
                         new Point(nodoPadre.Centro.X, nodoPadre.Centro.Y + nodoPadre.Radio),
                         puntoUnion
                     );
 
                     g.DrawLine(
-                        penConsanguineo,
+                        penParejaUnion,
                         new Point(nodoParejaH.Centro.X, nodoParejaH.Centro.Y + nodoParejaH.Radio),
                         puntoUnion
                     );
 
+                    // Desde el punto de unión hacia el hijo siempre en verde
+                    // porque los hijos son parte de la familia de sangre.
                     origenSuperior = puntoUnion;
                 }
                 else
                 {
-                    // Solo hay un progenitor conocido.
+                    // Solo hay un progenitor conocido: el tramo hacia el hijo es verde.
                     origenSuperior = new Point(
                         nodoPadre.Centro.X,
                         nodoPadre.Centro.Y + nodoPadre.Radio
