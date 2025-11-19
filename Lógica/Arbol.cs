@@ -22,6 +22,8 @@ namespace Proyecto_2_Arbol
             if (Raiz != null)
                 throw new InvalidOperationException("Ya existe un miembro inicial en el árbol.");
 
+            // La raíz se considera parte de la familia de sangre.
+            familiar.EsFamiliaPolitica = false;
             Raiz = familiar;
         }
 
@@ -37,7 +39,8 @@ namespace Proyecto_2_Arbol
             progenitor.AgregarHijo(hijo);
         }
 
-        // Registra una pareja. No se trata como hijo, solo se enlazan ambos.
+        // Registra una pareja.
+        // Solo se marca como familia política si la pareja es de un descendiente de sangre.
         public void AgregarPareja(Familiar persona, Familiar pareja)
         {
             if (persona == null)
@@ -48,6 +51,12 @@ namespace Proyecto_2_Arbol
 
             if (persona.Pareja != null)
                 throw new InvalidOperationException("Esta persona ya tiene una pareja registrada.");
+
+            // Descendiente de sangre: no es político y tiene progenitor distinto de null.
+            bool esDescendienteDeSangre = !persona.EsFamiliaPolitica && persona.Progenitor != null;
+
+            // Solo las parejas de esos descendientes se marcan como familia política.
+            pareja.EsFamiliaPolitica = esDescendienteDeSangre;
 
             persona.Pareja = pareja;
             pareja.Pareja = persona;

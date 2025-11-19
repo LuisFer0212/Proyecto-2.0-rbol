@@ -306,9 +306,14 @@ namespace Proyecto_2_Arbol
                 mapa[nodo.Familiar] = nodo;
             }
 
-            using var penLinea = new Pen(Theme.Line, 2);
+            // Colores de familia de sangre y familia política (mismos que en el borde).
+            Color bordePrincipal = Color.FromArgb(0, 153, 51); // verde fuerte
+            Color bordePolitica = Color.FromArgb(192, 64, 0);  // naranja rojizo
 
-            // Línea horizontal entre parejas.
+            using var penPareja = new Pen(Theme.Line, 2);            // líneas horizontales de pareja
+            using var penConsanguineo = new Pen(bordePrincipal, 3);  // líneas hacia hijos (siempre familia de sangre)
+
+            // Línea horizontal entre parejas (neutral).
             var parejasMarcadas = new HashSet<Familiar>();
             foreach (var nodo in nodosVisuales)
             {
@@ -318,13 +323,13 @@ namespace Proyecto_2_Arbol
 
                 if (mapa.TryGetValue(fam.Pareja, out var nodoPareja))
                 {
-                    g.DrawLine(penLinea, nodo.Centro, nodoPareja.Centro);
+                    g.DrawLine(penPareja, nodo.Centro, nodoPareja.Centro);
                     parejasMarcadas.Add(fam);
                     parejasMarcadas.Add(fam.Pareja);
                 }
             }
 
-            // Líneas hacia los hijos.
+            // Líneas hacia los hijos (siempre color de familia de sangre).
             foreach (var nodoHijo in nodosVisuales)
             {
                 var hijo = nodoHijo.Familiar;
@@ -345,15 +350,15 @@ namespace Proyecto_2_Arbol
 
                     var puntoUnion = new Point(unionX, unionY);
 
-                    // Líneas cortas desde cada integrante hacia el punto de unión.
+                    // Líneas cortas desde cada integrante hacia el punto de unión (mismo color consanguíneo).
                     g.DrawLine(
-                        penLinea,
+                        penConsanguineo,
                         new Point(nodoPadre.Centro.X, nodoPadre.Centro.Y + nodoPadre.Radio),
                         puntoUnion
                     );
 
                     g.DrawLine(
-                        penLinea,
+                        penConsanguineo,
                         new Point(nodoParejaH.Centro.X, nodoParejaH.Centro.Y + nodoParejaH.Radio),
                         puntoUnion
                     );
@@ -374,7 +379,7 @@ namespace Proyecto_2_Arbol
                     nodoHijo.Centro.Y - nodoHijo.Radio
                 );
 
-                g.DrawLine(penLinea, origenSuperior, destinoInferior);
+                g.DrawLine(penConsanguineo, origenSuperior, destinoInferior);
             }
         }
 
@@ -385,11 +390,12 @@ namespace Proyecto_2_Arbol
             var rect = new Rectangle(nodo.Centro.X - r, nodo.Centro.Y - r, r * 2, r * 2);
 
             // Colores para diferenciar familia principal y familia política.
-            // Familia principal: azul intenso.
-            // Familia política: gris.
+            Color bordePrincipal = Color.FromArgb(0, 153, 51); // verde fuerte
+            Color bordePolitica = Color.FromArgb(192, 64, 0);  // naranja rojizo
+
             Color colorBorde = nodo.Familiar.EsFamiliaPolitica
-                ? Color.FromArgb(0xAD, 0xB5, 0xBD) // gris suave
-                : Color.FromArgb(0x4C, 0x6E, 0xF5); // azul similar al encabezado
+                ? bordePolitica
+                : bordePrincipal;
 
             // Intento de cargar la foto asociada al familiar.
             bool dibujoFoto = false;
@@ -412,7 +418,6 @@ namespace Proyecto_2_Arbol
                 }
                 catch
                 {
-                    // Si hay un problema con la imagen, se cae al modo sin foto.
                     dibujoFoto = false;
                 }
             }
@@ -424,8 +429,8 @@ namespace Proyecto_2_Arbol
                 g.FillEllipse(relleno, rect);
             }
 
-            // Borde del círculo según el tipo de familiar.
-            using (var borde = new Pen(colorBorde, 3))
+            // Borde grueso del círculo según el tipo de familiar.
+            using (var borde = new Pen(colorBorde, 4))
             {
                 g.DrawEllipse(borde, rect);
             }

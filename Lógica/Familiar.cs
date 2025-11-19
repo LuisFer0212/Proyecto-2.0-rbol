@@ -16,11 +16,11 @@ namespace Proyecto_2_Arbol
         public double Longitud { get; set; }
         public string RutaFoto { get; set; }
 
-        // Indica si este nodo corresponde a familia política (parejas).
-        // Por defecto es falso; se marca en true cuando se registra como pareja.
+        // Indica si este nodo se considera familia política
+        // para efectos de visualización (parejas de la familia de sangre).
         public bool EsFamiliaPolitica { get; internal set; }
 
-        // Progenitor directo en el árbol.
+        // Progenitor directo en el árbol (madre/padre que aparece como padre de este nodo).
         public Familiar? Progenitor { get; internal set; }
 
         // Primer hijo de este familiar. Si no tiene hijos, queda en null.
@@ -29,7 +29,7 @@ namespace Proyecto_2_Arbol
         // Siguiente hijo del mismo progenitor (hermano en el mismo nivel).
         public Familiar? HermanoDerecho { get; internal set; }
 
-        // Pareja actual. Se usa para mostrar la familia política al lado.
+        // Pareja actual.
         public Familiar? Pareja { get; internal set; }
 
         public Familiar(
@@ -48,14 +48,16 @@ namespace Proyecto_2_Arbol
             Latitud = latitud;
             Longitud = longitud;
             RutaFoto = rutaFoto;
-            EsFamiliaPolitica = false; // por defecto se asume consanguíneo
+
+            // De entrada se asume que forma parte de la familia de sangre.
+            EsFamiliaPolitica = false;
         }
 
         // Agrega un hijo a este familiar encadenándolo con PrimerHijo y HermanoDerecho.
         internal void AgregarHijo(Familiar hijo)
         {
             hijo.Progenitor = this;
-            hijo.EsFamiliaPolitica = false; // los hijos forman parte de la familia principal
+            hijo.EsFamiliaPolitica = false; // los hijos siempre son familia de sangre
 
             // Si no hay hijos aún, este se vuelve el primero.
             if (PrimerHijo == null)
