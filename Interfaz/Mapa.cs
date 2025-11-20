@@ -1,6 +1,8 @@
+// Interfaz.Mapa.cs
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using System.IO;
 using GMap.NET;
 using GMap.NET.MapProviders;
 using GMap.NET.WindowsForms;
@@ -10,12 +12,18 @@ namespace Proyecto_2_Arbol
 {
     public class MapaForm : Form
     {
+        private readonly ArbolGenealogico arbol;
+
         private GMapControl mapa;
-        private GMapOverlay marcadores;
+        private GMapOverlay capaMarcadores;
+        private GMapOverlay capaLineas;
+
         private Button btnZoomIn, btnZoomOut;
 
-        public MapaForm()
+        public MapaForm(ArbolGenealogico arbol)
         {
+            this.arbol = arbol ?? throw new ArgumentNullException(nameof(arbol));
+
             // === Ventana ===
             Text = "Mapa Genealógico";
             Width = 1000;
@@ -24,7 +32,7 @@ namespace Proyecto_2_Arbol
             BackColor = ColorTranslator.FromHtml("#F4F6FA");
             Font = new Font("Segoe UI", 11);
 
-            // === Control de mapa ===
+            // === Configurar mapa ===
             mapa = new GMapControl
             {
                 Dock = DockStyle.Fill,
@@ -32,7 +40,7 @@ namespace Proyecto_2_Arbol
                 MinZoom = 2,
                 MaxZoom = 18,
                 Zoom = 7,
-                Position = new PointLatLng(9.934739, -84.087502), // San José, CR
+                Position = new PointLatLng(9.934739, -84.087502),
                 MouseWheelZoomEnabled = true,
                 MouseWheelZoomType = MouseWheelZoomType.MousePositionAndCenter,
                 CanDragMap = true,
@@ -40,8 +48,12 @@ namespace Proyecto_2_Arbol
             };
 
             GMaps.Instance.Mode = AccessMode.ServerOnly;
-            marcadores = new GMapOverlay("marcadores");
-            mapa.Overlays.Add(marcadores);
+
+            capaMarcadores = new GMapOverlay("marcadores");
+            capaLineas = new GMapOverlay("lineas");
+
+            mapa.Overlays.Add(capaMarcadores);
+            mapa.Overlays.Add(capaLineas);
 
             Controls.Add(mapa);
 
@@ -55,15 +67,40 @@ namespace Proyecto_2_Arbol
             btnZoomIn.Click += (s, e) => { if (mapa.Zoom < mapa.MaxZoom) mapa.Zoom++; };
             btnZoomOut.Click += (s, e) => { if (mapa.Zoom > mapa.MinZoom) mapa.Zoom--; };
 
-            // === Marcador de ejemplo ===
-            var marcador = new GMarkerGoogle(
-                new PointLatLng(9.934739, -84.087502),
-                GMarkerGoogleType.red_dot
-            )
+            // === Cargar familiares reales ===
+            CargarFamiliaresEnMapa();
+        }
+
+        private void CargarFamiliaresEnMapa()
+        {
+            capaMarcadores.Markers.Clear();
+
+            var lista = arbol.ObtenerTodosLosFamiliares();
+
+            foreach (var f in lista)
             {
-                ToolTipText = "Familiar: Juan Pérez\nSan José, Costa Rica"
-            };
-            marcadores.Markers.Add(marcador);
+                if (f.Latitud == 0 && f.Longitud == 0)
+                    continue; // No tiene ubicación
+
+                var punto = new PointLatLng(f.Latitud, f.Longitud);
+
+                // 🔹 Marcador generado en memoria (no necesita PNG)
+                int size = 16;
+                Bitmap bmp = new Bitmap(size, size);
+                using (Graphics g = Graphics.FromImage(bmp))
+                {
+                    g.Clear(Color.Transparent);
+                    g.FillEllipse(Brushes.Blue, 0, 0, size, size);
+                }
+
+                var marcador = new GMarkerGoogle(punto, bmp)
+                {
+                    ToolTipText = $"{f.Nombre}\nLat: {f.Latitud}\nLon: {f.Longitud}",
+                    ToolTipMode = MarkerTooltipMode.OnMouseOver
+                };
+
+                capaMarcadores.Markers.Add(marcador);
+            }
         }
 
         private Button CrearBoton(string texto, int left, int top)

@@ -1,36 +1,30 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\luisf\\Downloads\\CAZY RISK CODE\\Proyecto-2.0-rbol\\Proyecto-2.0-rbol.csproj": {}
+    "C:\\Users\\mezac\\OneDrive\\Documentos\\Tec\\Algoritmos y estructuras de datos l\\Poyecto2\\Proyecto-2.0-rbol\\Proyecto-2.0-rbol.csproj": {}
   },
   "projects": {
-    "C:\\Users\\luisf\\Downloads\\CAZY RISK CODE\\Proyecto-2.0-rbol\\Proyecto-2.0-rbol.csproj": {
+    "C:\\Users\\mezac\\OneDrive\\Documentos\\Tec\\Algoritmos y estructuras de datos l\\Poyecto2\\Proyecto-2.0-rbol\\Proyecto-2.0-rbol.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\luisf\\Downloads\\CAZY RISK CODE\\Proyecto-2.0-rbol\\Proyecto-2.0-rbol.csproj",
+        "projectUniqueName": "C:\\Users\\mezac\\OneDrive\\Documentos\\Tec\\Algoritmos y estructuras de datos l\\Poyecto2\\Proyecto-2.0-rbol\\Proyecto-2.0-rbol.csproj",
         "projectName": "Proyecto-2.0-rbol",
-        "projectPath": "C:\\Users\\luisf\\Downloads\\CAZY RISK CODE\\Proyecto-2.0-rbol\\Proyecto-2.0-rbol.csproj",
-        "packagesPath": "C:\\Users\\luisf\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\luisf\\Downloads\\CAZY RISK CODE\\Proyecto-2.0-rbol\\obj\\",
+        "projectPath": "C:\\Users\\mezac\\OneDrive\\Documentos\\Tec\\Algoritmos y estructuras de datos l\\Poyecto2\\Proyecto-2.0-rbol\\Proyecto-2.0-rbol.csproj",
+        "packagesPath": "C:\\Users\\mezac\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\mezac\\OneDrive\\Documentos\\Tec\\Algoritmos y estructuras de datos l\\Poyecto2\\Proyecto-2.0-rbol\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\luisf\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\mezac\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net8.0-windows"
+          "net9.0-windows"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net8.0-windows7.0": {
-            "targetAlias": "net8.0-windows",
+          "net9.0-windows7.0": {
+            "targetAlias": "net9.0-windows",
             "projectReferences": {}
           }
         },
@@ -47,16 +41,20 @@
         "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
-        "net8.0-windows7.0": {
-          "targetAlias": "net8.0-windows",
+        "net9.0-windows7.0": {
+          "targetAlias": "net9.0-windows",
           "dependencies": {
             "GMap.NET.Core": {
               "target": "Package",
-              "version": "[2.1.7, )"
+              "version": "[1.7.5, )"
             },
             "GMap.NET.WindowsForms": {
               "target": "Package",
               "version": "[1.7.5, )"
+            },
+            "System.Data.SQLite.Core": {
+              "target": "Package",
+              "version": "[1.0.119, )"
             }
           },
           "imports": [
@@ -78,7 +76,7 @@
               "privateAssets": "none"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

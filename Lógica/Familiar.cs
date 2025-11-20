@@ -1,3 +1,4 @@
+// Lógica.Familiar.cs
 // Archivo: Familiar.cs
 // Clase que representa a una persona dentro del árbol genealógico.
 
