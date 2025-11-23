@@ -1,3 +1,4 @@
+//Interfaz.Principal.cs
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -110,14 +111,14 @@ namespace Proyecto_2_Arbol
             // Abre la ventana del mapa.
             btnMapa.Click += (s, e) =>
             {
-                var formMapa = new MapaForm();
+                var formMapa = new MapaForm(arbol);
                 formMapa.ShowDialog();
             };
 
             // Abre la ventana de estadísticas.
             btnEstadisticas.Click += (s, e) =>
             {
-                var formEstadisticas = new StatisticsForm();
+                var formEstadisticas = new StatisticsForm(arbol);
                 formEstadisticas.ShowDialog();
             };
 

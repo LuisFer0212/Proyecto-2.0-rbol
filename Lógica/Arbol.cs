@@ -67,5 +67,30 @@ namespace Proyecto_2_Arbol
         {
             Raiz = null;
         }
+        // =============================
+        // NUEVO: Integración con Grafo
+        // =============================
+        private readonly GrafoResidencias grafo = new GrafoResidencias();
+
+        // Devuelve todos los familiares del árbol (se usa en mapa y estadísticas)
+        public Familiar[] ObtenerTodosLosFamiliares()
+        {
+            grafo.ConstruirGrafoDesdeArbol(this);
+            return grafo.ObtenerTodosLosFamiliares();
+        }
+
+        // Devuelve el par más lejano y el promedio de distancias
+        public (Familiar cercano1, Familiar cercano2, Familiar lejano1, Familiar lejano2, double distanciaPromedio)
+        ObtenerEstadisticasGrafo()
+        {
+            grafo.ConstruirGrafoDesdeArbol(this);
+
+            var (c1, c2, _) = grafo.ParMasCercano();
+            var (l1, l2, _) = grafo.ParMasLejano();
+            double promedio = grafo.DistanciaPromedio();
+
+            return (c1, c2, l1, l2, promedio);
+        }
+
     }
 }

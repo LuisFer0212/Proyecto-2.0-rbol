@@ -1,21 +1,31 @@
+// Interfaz.Mapa.cs
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using System.IO;
 using GMap.NET;
 using GMap.NET.MapProviders;
 using GMap.NET.WindowsForms;
 using GMap.NET.WindowsForms.Markers;
+using System.Drawing.Drawing2D;
+using System.Drawing;
 
 namespace Proyecto_2_Arbol
 {
     public class MapaForm : Form
     {
+        private readonly ArbolGenealogico arbol;
+
         private GMapControl mapa;
-        private GMapOverlay marcadores;
+        private GMapOverlay capaMarcadores;
+        private GMapOverlay capaLineas;
+
         private Button btnZoomIn, btnZoomOut;
 
-        public MapaForm()
+        public MapaForm(ArbolGenealogico arbol)
         {
+            this.arbol = arbol ?? throw new ArgumentNullException(nameof(arbol));
+
             // === Ventana ===
             Text = "Mapa Genealógico";
             Width = 1000;
@@ -24,7 +34,7 @@ namespace Proyecto_2_Arbol
             BackColor = ColorTranslator.FromHtml("#F4F6FA");
             Font = new Font("Segoe UI", 11);
 
-            // === Control de mapa ===
+            // === Configurar mapa ===
             mapa = new GMapControl
             {
                 Dock = DockStyle.Fill,
@@ -32,7 +42,7 @@ namespace Proyecto_2_Arbol
                 MinZoom = 2,
                 MaxZoom = 18,
                 Zoom = 7,
-                Position = new PointLatLng(9.934739, -84.087502), // San José, CR
+                Position = new PointLatLng(9.934739, -84.087502),
                 MouseWheelZoomEnabled = true,
                 MouseWheelZoomType = MouseWheelZoomType.MousePositionAndCenter,
                 CanDragMap = true,
@@ -40,8 +50,12 @@ namespace Proyecto_2_Arbol
             };
 
             GMaps.Instance.Mode = AccessMode.ServerOnly;
-            marcadores = new GMapOverlay("marcadores");
-            mapa.Overlays.Add(marcadores);
+
+            capaMarcadores = new GMapOverlay("marcadores");
+            capaLineas = new GMapOverlay("lineas");
+
+            mapa.Overlays.Add(capaMarcadores);
+            mapa.Overlays.Add(capaLineas);
 
             Controls.Add(mapa);
 
@@ -55,15 +69,111 @@ namespace Proyecto_2_Arbol
             btnZoomIn.Click += (s, e) => { if (mapa.Zoom < mapa.MaxZoom) mapa.Zoom++; };
             btnZoomOut.Click += (s, e) => { if (mapa.Zoom > mapa.MinZoom) mapa.Zoom--; };
 
-            // === Marcador de ejemplo ===
-            var marcador = new GMarkerGoogle(
-                new PointLatLng(9.934739, -84.087502),
-                GMarkerGoogleType.red_dot
-            )
+            // === Cargar familiares reales ===
+            CargarFamiliaresEnMapa();
+        }
+
+        private void CargarFamiliaresEnMapa()
+        {
+            capaMarcadores.Markers.Clear();
+            capaLineas.Routes.Clear();
+
+            var lista = arbol.ObtenerTodosLosFamiliares();
+
+            foreach (var f in lista)
             {
-                ToolTipText = "Familiar: Juan Pérez\nSan José, Costa Rica"
-            };
-            marcadores.Markers.Add(marcador);
+                var punto = new PointLatLng(f.Latitud, f.Longitud);
+
+                Bitmap icono = CrearFotoCircular(f.RutaFoto, 60);
+
+                var marker = new GMarkerGoogle(punto, icono)
+                {
+                    ToolTipMode = MarkerTooltipMode.OnMouseOver,
+                    ToolTipText = f.Nombre,
+                    Tag = f
+                };
+
+                capaMarcadores.Markers.Add(marker);
+            }
+
+            // Registrar un único evento general
+            mapa.OnMarkerClick -= Mapa_OnMarkerClick;
+            mapa.OnMarkerClick += Mapa_OnMarkerClick;
+        }
+
+        private Bitmap CrearFotoCircular(string ruta, int size)
+        {
+            Bitmap bmp = new Bitmap(size, size);
+
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+
+                using (GraphicsPath path = new GraphicsPath())
+                {
+                    path.AddEllipse(0, 0, size, size);
+                    g.SetClip(path);
+
+                    try
+                    {
+                        using (Image img = Image.FromFile(ruta))
+                        {
+                            g.DrawImage(img, 0, 0, size, size);
+                        }
+                    }
+                    catch
+                    {
+                        g.Clear(Color.Gray);
+                    }
+
+                    g.ResetClip();
+
+                    g.DrawEllipse(new Pen(Color.Black, 2), 0, 0, size - 1, size - 1);
+                }
+            }
+
+            return bmp;
+        }
+
+        private void Mapa_OnMarkerClick(GMapMarker item, MouseEventArgs e)
+        {
+            if (item.Tag is not Familiar seleccionado)
+                return;
+
+            capaLineas.Routes.Clear();
+
+            var lista = arbol.ObtenerTodosLosFamiliares();
+            string msg = $"Distancias desde {seleccionado.Nombre}:\n\n";
+
+            foreach (var otro in lista)
+            {
+                if (otro == seleccionado) continue;
+
+                double dist = GeoHelper.DistanciaKm(
+                    seleccionado.Latitud, seleccionado.Longitud,
+                    otro.Latitud, otro.Longitud
+                );
+
+                msg += $"{otro.Nombre}: {dist:F2} km\n";
+
+                // Dibujar líneas
+                var route = new GMapRoute(
+                    new[]
+                    {
+                        new PointLatLng(seleccionado.Latitud, seleccionado.Longitud),
+                        new PointLatLng(otro.Latitud, otro.Longitud)
+                    },
+                    $"ruta-{seleccionado.Nombre}-{otro.Nombre}"
+                );
+
+                route.Stroke = new Pen(Color.Red, 2);
+                capaLineas.Routes.Add(route);
+            }
+
+            mapa.Zoom++;
+            mapa.Zoom--;
+
+            MessageBox.Show(msg, "Distancias", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private Button CrearBoton(string texto, int left, int top)

@@ -1,3 +1,4 @@
+// Interfaz.DibujarArbol.cs
 // Archivo: DibujarArbol.cs
 // Lienzo donde se dibuja el árbol genealógico en la interfaz.
 

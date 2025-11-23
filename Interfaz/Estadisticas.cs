@@ -1,13 +1,24 @@
+// Interfaz.Estadisticas.cs
+using System;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Collections.Generic;
 
 namespace Proyecto_2_Arbol
 {
     public class StatisticsForm : Form
     {
-        public StatisticsForm()
+        private readonly ArbolGenealogico arbol;
+
+        private Label lblParLejano;
+        private Label lblParCercano;
+        private Label lblDistanciaPromedio;
+
+        public StatisticsForm(ArbolGenealogico arbol)
         {
-            Text = "Estadísticas (vista)";
+            this.arbol = arbol ?? throw new ArgumentNullException(nameof(arbol));
+
+            Text = "Estadísticas";
             Width = 520;
             Height = 340;
             StartPosition = FormStartPosition.CenterParent;
@@ -16,10 +27,10 @@ namespace Proyecto_2_Arbol
 
             var header = new Label
             {
-                Text = "📊 Estadísticas (interfaz, sin cálculos)",
+                Text = "📊 Estadísticas del Árbol",
                 Dock = DockStyle.Top,
                 Height = 60,
-                Font = new Font("Segoe UI", 14, System.Drawing.FontStyle.Bold),
+                Font = new Font("Segoe UI", 14, FontStyle.Bold),
                 TextAlign = ContentAlignment.MiddleCenter,
                 ForeColor = Theme.TextPrimary,
                 BackColor = Theme.BgMain
@@ -34,12 +45,14 @@ namespace Proyecto_2_Arbol
             };
             Controls.Add(panel);
 
-            panel.Controls.Add(Metric("Par más lejano:",        "— / —",  20));
-            panel.Controls.Add(Metric("Par más cercano:",       "— / —",  80));
-            panel.Controls.Add(Metric("Distancia promedio:",    "— km",   140));
+            lblParLejano = AddMetric(panel, "Par más lejano:", "— / —", 80);
+            lblParCercano = AddMetric(panel, "Par más cercano:", "— / —", 140);
+            lblDistanciaPromedio = AddMetric(panel, "Distancia promedio:", "— km", 200);
+
+            CargarEstadisticas();
         }
 
-        private Control Metric(string label, string value, int top)
+        private Label AddMetric(Panel panel, string labelText, string valueText, int top)
         {
             var container = new Panel
             {
@@ -52,7 +65,7 @@ namespace Proyecto_2_Arbol
 
             var lbl = new Label
             {
-                Text = label,
+                Text = labelText,
                 Left = 14,
                 Top = 12,
                 Width = 220,
@@ -61,7 +74,7 @@ namespace Proyecto_2_Arbol
             };
             var val = new Label
             {
-                Text = value,
+                Text = valueText,
                 Left = 240,
                 Top = 12,
                 Width = 200,
@@ -71,7 +84,39 @@ namespace Proyecto_2_Arbol
 
             container.Controls.Add(lbl);
             container.Controls.Add(val);
-            return container;
+            panel.Controls.Add(container);
+
+            return val;
         }
+
+        private void CargarEstadisticas()
+        {
+            var lista = arbol.ObtenerTodosLosFamiliares();
+
+            if (lista.Length < 2)
+            {
+                lblParLejano.Text = "— / —";
+                lblParCercano.Text = "— / —";
+                lblDistanciaPromedio.Text = "— km";
+                return;
+            }
+
+            // Obtener estadísticas directamente del grafo
+            var (c1, c2, l1, l2, promedio) = arbol.ObtenerEstadisticasGrafo();
+
+            // Par más lejano
+            lblParLejano.Text = (l1 != null && l2 != null)
+                ? $"{l1.Nombre} / {l2.Nombre}"
+                : "— / —";
+
+            // Par más cercano
+            lblParCercano.Text = (c1 != null && c2 != null)
+                ? $"{c1.Nombre} / {c2.Nombre}"
+                : "— / —";
+
+            // Promedio de distancias
+            lblDistanciaPromedio.Text = $"{promedio:F2} km";
+        }
+
     }
 }

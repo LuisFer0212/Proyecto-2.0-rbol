@@ -1,17 +1,21 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <RootNamespace>Proyecto_2_Arbol</RootNamespace>
+    <UserSecretsId>b6b6069a-b6f3-478e-bac6-79461ed24fce</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GMap.NET.Core" Version="2.1.7" />
+    <!-- GMap.NET compatible versions -->
+    <PackageReference Include="GMap.NET.Core" Version="1.7.5" />
     <PackageReference Include="GMap.NET.WindowsForms" Version="1.7.5" />
+
+    <!-- SQLite para caching de GMap -->
+    <PackageReference Include="System.Data.SQLite.Core" Version="1.0.119" />
   </ItemGroup>
 
 </Project>
