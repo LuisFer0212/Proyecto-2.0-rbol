@@ -1,3 +1,4 @@
+//Interfaz.Tema.cs
 using System.Drawing;
 
 namespace Proyecto_2_Arbol
