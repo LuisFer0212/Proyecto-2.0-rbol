@@ -31,10 +31,16 @@ namespace Proyecto_2_Arbol
         private TreeCanvas canvas;
 
         // Constructor de la ventana principal.
-        // Crea el árbol, arma la interfaz y aplica los colores del tema visual.
+        // Carga el árbol desde disco, arma la interfaz y aplica los colores del tema visual.
         public MainForm()
         {
+            // Crea la instancia del árbol genealógico.
             arbol = new ArbolGenealogico();
+
+            // Intenta cargar el árbol guardado en el archivo si existe.
+            arbol.CargarDesdeArchivo();
+
+            // Construye la interfaz con el árbol actual (vacío o cargado).
             BuildUI();
             ApplyTheme();
         }
@@ -58,6 +64,8 @@ namespace Proyecto_2_Arbol
                 Padding = new Padding(16)
             };
 
+            Controls.Add(panelContenido);
+
             // Lienzo del árbol.
             canvas = new TreeCanvas(arbol)
             {
@@ -78,8 +86,8 @@ namespace Proyecto_2_Arbol
                 Text = "🌳 Árbol Genealógico",
                 Dock = DockStyle.Top,
                 Height = 100,
-                Font = new Font("Segoe UI", 14, FontStyle.Bold),
-                TextAlign = ContentAlignment.MiddleCenter
+                TextAlign = ContentAlignment.MiddleCenter,
+                Font = new Font("Segoe UI", 14, FontStyle.Bold)
             };
             panelMenu.Controls.Add(lblTitulo);
 
@@ -96,37 +104,19 @@ namespace Proyecto_2_Arbol
                 boton.Top = top;
                 boton.Left = 15;
                 panelMenu.Controls.Add(boton);
-                top += 60;
+                top += 55;
             }
 
-            // Se agregan los paneles al formulario.
-            Controls.Add(panelContenido);
-            Controls.Add(panelMenu);
-
-            // Eventos de los botones.
-
-            // Cierra la aplicación.
+            // Eventos de clic para cada botón.
+            btnMapa.Click += BtnMapa_Click;
+            btnEstadisticas.Click += BtnEstadisticas_Click;
+            btnEliminarArbol.Click += BtnEliminarArbol_Click;
             btnSalir.Click += (s, e) => Close();
 
-            // Abre la ventana del mapa.
-            btnMapa.Click += (s, e) =>
-            {
-                var formMapa = new MapaForm(arbol);
-                formMapa.ShowDialog();
-            };
-
-            // Abre la ventana de estadísticas.
-            btnEstadisticas.Click += (s, e) =>
-            {
-                var formEstadisticas = new StatisticsForm(arbol);
-                formEstadisticas.ShowDialog();
-            };
-
-            // Elimina todo el árbol y limpia el lienzo.
-            btnEliminarArbol.Click += BtnEliminarArbol_Click;
+            Controls.Add(panelMenu);
         }
 
-        // Crea un botón con el estilo usado en el menú lateral.
+        // Crea un botón del menú lateral con estilo base.
         private Button CreateMenuButton(string text)
         {
             var btn = new Button
@@ -190,17 +180,27 @@ namespace Proyecto_2_Arbol
                     boton.MouseLeave += HoverOut;
                 }
             }
-
-            // Colores en el área de contenido y el lienzo del árbol.
-            panelContenido.BackColor = Theme.BgMain;
-            canvas.BackColor = Theme.Card;
-            canvas.ForeColor = Theme.TextPrimary;
-
-            // Se solicita un repintado del lienzo.
-            canvas.Invalidate();
         }
 
-        // Cambia el fondo del botón cuando el puntero entra en la zona del botón.
+        // Maneja el clic del botón que abre la ventana del mapa.
+        private void BtnMapa_Click(object? sender, EventArgs e)
+        {
+            using (var mapaForm = new MapaForm(arbol))
+            {
+                mapaForm.ShowDialog(this);
+            }
+        }
+
+        // Maneja el clic del botón que abre la ventana de estadísticas.
+        private void BtnEstadisticas_Click(object? sender, EventArgs e)
+        {
+            using (var estadisticasForm = new StatisticsForm(arbol))
+            {
+                estadisticasForm.ShowDialog(this);
+            }
+        }
+
+        // Cambia el fondo del botón cuando el puntero entra en el botón.
         private void HoverIn(object? sender, EventArgs e)
         {
             if (sender is Button boton)
