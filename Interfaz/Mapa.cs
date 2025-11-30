@@ -8,7 +8,6 @@ using GMap.NET.MapProviders;
 using GMap.NET.WindowsForms;
 using GMap.NET.WindowsForms.Markers;
 using System.Drawing.Drawing2D;
-using System.Drawing;
 
 namespace Proyecto_2_Arbol
 {
@@ -18,7 +17,8 @@ namespace Proyecto_2_Arbol
 
         private GMapControl mapa;
         private GMapOverlay capaMarcadores;
-        private GMapOverlay capaLineas;
+        private GMapOverlay capaGrafoCompleto;
+        private GMapOverlay capaRutas;
 
         private Button btnZoomIn, btnZoomOut;
 
@@ -51,11 +51,14 @@ namespace Proyecto_2_Arbol
 
             GMaps.Instance.Mode = AccessMode.ServerOnly;
 
-            capaMarcadores = new GMapOverlay("marcadores");
-            capaLineas = new GMapOverlay("lineas");
+            // === Crear capas ===
+            capaMarcadores = new GMapOverlay("marcadores");     // Fotos
+            capaGrafoCompleto = new GMapOverlay("grafo");       // Todas las conexiones
+            capaRutas = new GMapOverlay("rutas");               // Dijkstra
 
+            mapa.Overlays.Add(capaGrafoCompleto);
             mapa.Overlays.Add(capaMarcadores);
-            mapa.Overlays.Add(capaLineas);
+            mapa.Overlays.Add(capaRutas);
 
             Controls.Add(mapa);
 
@@ -69,17 +72,19 @@ namespace Proyecto_2_Arbol
             btnZoomIn.Click += (s, e) => { if (mapa.Zoom < mapa.MaxZoom) mapa.Zoom++; };
             btnZoomOut.Click += (s, e) => { if (mapa.Zoom > mapa.MinZoom) mapa.Zoom--; };
 
-            // === Cargar familiares reales ===
+            // === Cargar familiares y conexiones ===
             CargarFamiliaresEnMapa();
         }
 
         private void CargarFamiliaresEnMapa()
         {
             capaMarcadores.Markers.Clear();
-            capaLineas.Routes.Clear();
+            capaGrafoCompleto.Routes.Clear();
+            // NO borrar capaRutas: solo se borra al hacer clic
 
             var lista = arbol.ObtenerTodosLosFamiliares();
 
+            // === MARCADORES (fotos) ===
             foreach (var f in lista)
             {
                 var punto = new PointLatLng(f.Latitud, f.Longitud);
@@ -96,7 +101,40 @@ namespace Proyecto_2_Arbol
                 capaMarcadores.Markers.Add(marker);
             }
 
-            // Registrar un único evento general
+            // === DIBUJAR TODAS LAS CONEXIONES DEL GRAFO ===
+            for (int i = 0; i < lista.Length; i++)
+            {
+                for (int j = i + 1; j < lista.Length; j++)
+                {
+                    var f1 = lista[i];
+                    var f2 = lista[j];
+
+                    var p1 = new PointLatLng(f1.Latitud, f1.Longitud);
+                    var p2 = new PointLatLng(f2.Latitud, f2.Longitud);
+
+                    var route = new GMapRoute(new[] { p1, p2 }, $"edge-{i}-{j}");
+                    route.Stroke = new Pen(Color.DarkGray, 2);
+
+                    capaGrafoCompleto.Routes.Add(route);
+
+                    double dist = GeoHelper.DistanciaKm(f1.Latitud, f1.Longitud, f2.Latitud, f2.Longitud);
+
+                    // Punto medio de la línea
+                    double midLat = (f1.Latitud + f2.Latitud) / 2.0;
+                    double midLng = (f1.Longitud + f2.Longitud) / 2.0;
+
+                    // Crear el marcador de texto (sin fondo, rojo)
+                    var label = new GMapTextMarker(
+                        new PointLatLng(midLat, midLng),
+                        $"{dist:F1} km"
+                    );
+
+                    // Agregarlo a la capa del grafo
+                    capaGrafoCompleto.Markers.Add(label);
+                }
+
+            }
+            // Registrar evento de clic en marcador
             mapa.OnMarkerClick -= Mapa_OnMarkerClick;
             mapa.OnMarkerClick += Mapa_OnMarkerClick;
         }
@@ -127,7 +165,6 @@ namespace Proyecto_2_Arbol
                     }
 
                     g.ResetClip();
-
                     g.DrawEllipse(new Pen(Color.Black, 2), 0, 0, size - 1, size - 1);
                 }
             }
@@ -135,45 +172,51 @@ namespace Proyecto_2_Arbol
             return bmp;
         }
 
+        // ==========================
+        // EVENTO DE CLIC EN UN FAMILIAR
+        // ==========================
         private void Mapa_OnMarkerClick(GMapMarker item, MouseEventArgs e)
         {
             if (item.Tag is not Familiar seleccionado)
                 return;
 
-            capaLineas.Routes.Clear();
+            // Borrar solo las rutas Dijkstra
+            capaRutas.Routes.Clear();
 
             var lista = arbol.ObtenerTodosLosFamiliares();
             string msg = $"Distancias desde {seleccionado.Nombre}:\n\n";
+
+            // Construir grafo real desde el árbol
+            var grafo = new GrafoResidencias();
+            grafo.ConstruirGrafoDesdeArbol(arbol);
 
             foreach (var otro in lista)
             {
                 if (otro == seleccionado) continue;
 
-                double dist = GeoHelper.DistanciaKm(
-                    seleccionado.Latitud, seleccionado.Longitud,
-                    otro.Latitud, otro.Longitud
-                );
+                double dist = grafo.DistanciaMinima(seleccionado, otro);
 
-                msg += $"{otro.Nombre}: {dist:F2} km\n";
+                msg += $"{otro.Nombre}: {dist:F2} km (Dijkstra)\n";
 
-                // Dibujar líneas
-                var route = new GMapRoute(
-                    new[]
-                    {
-                        new PointLatLng(seleccionado.Latitud, seleccionado.Longitud),
-                        new PointLatLng(otro.Latitud, otro.Longitud)
-                    },
-                    $"ruta-{seleccionado.Nombre}-{otro.Nombre}"
-                );
+                var camino = grafo.CaminoMinimo(seleccionado, otro);
+                if (camino.Length < 2)
+                    continue;
 
-                route.Stroke = new Pen(Color.Red, 2);
-                capaLineas.Routes.Add(route);
+                for (int i = 0; i < camino.Length - 1; i++)
+                {
+                    var p1 = new PointLatLng(camino[i].Latitud, camino[i].Longitud);
+                    var p2 = new PointLatLng(camino[i + 1].Latitud, camino[i + 1].Longitud);
+
+                    var route = new GMapRoute(new[] { p1, p2 }, $"tramo-{i}");
+                    route.Stroke = new Pen(Color.MediumPurple, 3);
+
+                    capaRutas.Routes.Add(route);
+                }
             }
 
-            mapa.Zoom++;
-            mapa.Zoom--;
+            mapa.Zoom++; mapa.Zoom--; // refrescar mapa
 
-            MessageBox.Show(msg, "Distancias", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(msg, "Distancias (Dijkstra)", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private Button CrearBoton(string texto, int left, int top)
@@ -197,4 +240,22 @@ namespace Proyecto_2_Arbol
             return btn;
         }
     }
+    public class GMapTextMarker : GMapMarker
+    {
+        public string Texto;
+        private Font fuente = new Font("Segoe UI", 10, FontStyle.Bold);
+        private Brush brushRojo = new SolidBrush(Color.Red);
+
+        public GMapTextMarker(PointLatLng p, string texto) : base(p)
+        {
+            Texto = texto;
+            Offset = new Point(-20, -20); // mueve el texto ligeramente arriba del punto
+        }
+
+        public override void OnRender(Graphics g)
+        {
+            g.DrawString(Texto, fuente, brushRojo, LocalPosition.X, LocalPosition.Y);
+        }
+    }
+
 }
