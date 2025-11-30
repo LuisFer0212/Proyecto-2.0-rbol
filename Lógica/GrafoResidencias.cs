@@ -192,5 +192,141 @@ namespace Proyecto_2_Arbol
 
             return suma / total;
         }
+        // =============================
+        // DIJKSTRA: Distancia mínima entre dos familiares
+        // =============================
+        public double DistanciaMinima(Familiar origen, Familiar destino)
+        {
+            var arr = nodos.AArray();
+            int n = arr.Length;
+
+            int start = Array.IndexOf(arr, origen);
+            int end = Array.IndexOf(arr, destino);
+
+            if (start == -1 || end == -1)
+                return double.PositiveInfinity;
+
+            double[] dist = new double[n];
+            bool[] visitado = new bool[n];
+
+            for (int i = 0; i < n; i++)
+                dist[i] = double.PositiveInfinity;
+
+            dist[start] = 0;
+
+            // Dijkstra tradicional
+            for (int iter = 0; iter < n - 1; iter++)
+            {
+                int u = -1;
+                double min = double.PositiveInfinity;
+
+                // Elegir nodo no visitado con menor distancia
+                for (int i = 0; i < n; i++)
+                {
+                    if (!visitado[i] && dist[i] < min)
+                    {
+                        min = dist[i];
+                        u = i;
+                    }
+                }
+
+                if (u == -1)
+                    break;
+
+                visitado[u] = true;
+
+                // Relajación
+                for (int v = 0; v < n; v++)
+                {
+                    if (!visitado[v])
+                    {
+                        double peso = matrizDistancias[u, v];
+                        if (dist[u] + peso < dist[v])
+                        {
+                            dist[v] = dist[u] + peso;
+                        }
+                    }
+                }
+            }
+
+            return dist[end];
+        }
+
+
+        // =============================
+        // DIJKSTRA: Obtener el camino completo entre dos familiares
+        // =============================
+        public Familiar[] CaminoMinimo(Familiar origen, Familiar destino)
+        {
+            var arr = nodos.AArray();
+            int n = arr.Length;
+
+            int start = Array.IndexOf(arr, origen);
+            int end = Array.IndexOf(arr, destino);
+
+            if (start == -1 || end == -1)
+                return Array.Empty<Familiar>();
+
+            double[] dist = new double[n];
+            int[] previo = new int[n];
+            bool[] visitado = new bool[n];
+
+            for (int i = 0; i < n; i++)
+            {
+                dist[i] = double.PositiveInfinity;
+                previo[i] = -1;
+            }
+
+            dist[start] = 0;
+
+            for (int iter = 0; iter < n - 1; iter++)
+            {
+                int u = -1;
+                double min = double.PositiveInfinity;
+
+                for (int i = 0; i < n; i++)
+                {
+                    if (!visitado[i] && dist[i] < min)
+                    {
+                        min = dist[i];
+                        u = i;
+                    }
+                }
+
+                if (u == -1)
+                    break;
+
+                visitado[u] = true;
+
+                for (int v = 0; v < n; v++)
+                {
+                    if (!visitado[v])
+                    {
+                        double peso = matrizDistancias[u, v];
+
+                        if (dist[u] + peso < dist[v])
+                        {
+                            dist[v] = dist[u] + peso;
+                            previo[v] = u;
+                        }
+                    }
+                }
+            }
+
+            // Reconstrucción del camino
+            var camino = new List<Familiar>();
+            int actual = end;
+
+            while (actual != -1)
+            {
+                camino.Add(arr[actual]);
+                actual = previo[actual];
+            }
+
+            camino.Reverse();
+            return camino.ToArray();
+        }
+
     }
+    
 }
