@@ -26,6 +26,8 @@ namespace Proyecto_2_Arbol
         {
             this.arbol = arbol ?? throw new ArgumentNullException(nameof(arbol));
 
+            WindowState = FormWindowState.Maximized;
+
             // === Ventana ===
             Text = "Mapa Genealógico";
             Width = 1000;
@@ -46,11 +48,17 @@ namespace Proyecto_2_Arbol
                 MouseWheelZoomEnabled = true,
                 MouseWheelZoomType = MouseWheelZoomType.MousePositionAndCenter,
                 CanDragMap = true,
-                DragButton = MouseButtons.Left
+                DragButton = MouseButtons.Left,
+
+                BackColor = Color.Black,        // fondo del control
+                EmptyTileColor = Color.Black,   // tiles vacíos negros
+                ShowTileGridLines = false
             };
 
-            GMaps.Instance.Mode = AccessMode.ServerOnly;
+            GMaps.Instance.Mode = AccessMode.ServerAndCache;
+            mapa.FillEmptyTiles = true;
 
+            
             // === Crear capas ===
             capaMarcadores = new GMapOverlay("marcadores");     // Fotos
             capaGrafoCompleto = new GMapOverlay("grafo");       // Todas las conexiones
@@ -91,7 +99,7 @@ namespace Proyecto_2_Arbol
 
                 Bitmap icono = CrearFotoCircular(f.RutaFoto, 60);
 
-                var marker = new GMarkerGoogle(punto, icono)
+                var marker = new FotoMarker(punto, icono, 60)
                 {
                     ToolTipMode = MarkerTooltipMode.OnMouseOver,
                     ToolTipText = f.Nombre,
@@ -240,22 +248,61 @@ namespace Proyecto_2_Arbol
             return btn;
         }
     }
-    public class GMapTextMarker : GMapMarker
+   public class GMapTextMarker : GMapMarker
     {
         public string Texto;
         private Font fuente = new Font("Segoe UI", 10, FontStyle.Bold);
-        private Brush brushRojo = new SolidBrush(Color.Red);
 
         public GMapTextMarker(PointLatLng p, string texto) : base(p)
         {
             Texto = texto;
-            Offset = new Point(-20, -20); // mueve el texto ligeramente arriba del punto
+            Offset = new Point(0, 0);
         }
 
         public override void OnRender(Graphics g)
         {
-            g.DrawString(Texto, fuente, brushRojo, LocalPosition.X, LocalPosition.Y);
+            SizeF tam = g.MeasureString(Texto, fuente);
+            Rectangle rect = new Rectangle(
+                (int)LocalPosition.X - 5,
+                (int)LocalPosition.Y - 5,
+                (int)tam.Width + 10,
+                (int)tam.Height + 10
+            );
+
+            // Fondo blanco
+            g.FillRectangle(Brushes.White, rect);
+
+            // Borde negro
+            g.DrawRectangle(Pens.Black, rect);
+
+            // Texto negro
+            g.DrawString(Texto, fuente, Brushes.Black, rect.X + 5, rect.Y + 5);
         }
     }
+
+    public class FotoMarker : GMapMarker
+    {
+        private readonly Bitmap imagen;
+        private readonly int size;
+
+        public FotoMarker(PointLatLng pos, Bitmap img, int size = 60) : base(pos)
+        {
+            this.imagen = img;
+            this.size = size;
+
+            // 🔹 Muy importante: definir el tamaño real del marcador
+            Size = new Size(size, size);
+
+            // 🔹 Centrar la imagen respecto al punto del marker
+            Offset = new Point(-size / 2, -size / 2);
+        }
+
+        public override void OnRender(Graphics g)
+        {
+            g.DrawImage(imagen, LocalPosition.X, LocalPosition.Y, size, size);
+        }
+    }
+
+
 
 }
