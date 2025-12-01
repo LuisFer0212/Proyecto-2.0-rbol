@@ -58,7 +58,14 @@ namespace Proyecto_2_Arbol
 
                 // Pareja
                 if (actual.Pareja != null)
-                    AgregarNodo(actual.Pareja);
+                {
+                    if (!nodos.Contiene(actual.Pareja))
+                    {
+                        cola.Enqueue(actual.Pareja);
+                        AgregarNodo(actual.Pareja);
+                    }
+                }
+
             }
 
             RecalcularMatriz();
