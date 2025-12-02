@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- No necesitamos Windows Forms en el proyecto de tests -->
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- Paquetes de xUnit -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.6.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- 👇 OJO: aquí ya NO referenciamos el .csproj grande.
+       En vez de eso, incluimos SOLO los .cs de la carpeta Lógica -->
+  <ItemGroup>
+    <Compile Include="..\Logica\Arbol.cs" Link="Logica\Arbol.cs" />
+    <Compile Include="..\Logica\Familiar.cs" Link="Logica\Familiar.cs" />
+    <Compile Include="..\Logica\GeoHelper.cs" Link="Logica\GeoHelper.cs" />
+    <Compile Include="..\Logica\GrafoResidencias.cs" Link="Logica\GrafoResidencias.cs" />
+    <Compile Include="..\Logica\ListaEnlazadas.cs" Link="Logica\ListaEnlazadas.cs" />
+  </ItemGroup>
+
+</Project>
