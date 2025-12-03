@@ -25,8 +25,8 @@ namespace Proyecto_2_Arbol
 
             // Ajustes básicos de la ventana de estadísticas.
             Text = "Estadísticas";
-            Width = 520;
-            Height = 500; // Ventana un poco más alta para que todo quepa cómodo.
+            Width = 640;               // Ventana un poco más ancha para nombres largos.
+            Height = 500;              // Ventana un poco más alta para que todo quepa cómodo.
             StartPosition = FormStartPosition.CenterParent;
             Font = new Font("Segoe UI", 11);
             BackColor = Theme.BgMain;
@@ -71,8 +71,8 @@ namespace Proyecto_2_Arbol
             {
                 Left = 10,
                 Top = top,
-                Width = 460,
-                Height = 70,          // Cajita más alta para que no se corten las letras.
+                Width = 580,           // Cajita más ancha para que entren mejor los textos.
+                Height = 70,           // Cajita más alta para que no se corten las letras.
                 BackColor = Theme.Card
             };
 
@@ -82,8 +82,8 @@ namespace Proyecto_2_Arbol
                 Text = labelText,
                 Left = 14,
                 Top = 15,
-                Width = 220,
-                Height = 40,          // Alto suficiente para texto de una o dos líneas.
+                Width = 250,           // Más ancho para títulos un poco más largos.
+                Height = 40,           // Alto suficiente para texto de una o dos líneas.
                 ForeColor = Theme.TextPrimary,
                 BackColor = Theme.Card
             };
@@ -92,10 +92,10 @@ namespace Proyecto_2_Arbol
             var val = new Label
             {
                 Text = valueText,
-                Left = 240,
+                Left = 270,            // Se corre a la derecha para aprovechar el nuevo ancho.
                 Top = 15,
-                Width = 200,
-                Height = 40,          // Igual alto para que no se corte el valor.
+                Width = 290,           // Más ancho para nombres de familiares largos.
+                Height = 40,           // Igual alto para que no se corte el valor.
                 ForeColor = Theme.TextPrimary,
                 BackColor = Theme.Card
             };
