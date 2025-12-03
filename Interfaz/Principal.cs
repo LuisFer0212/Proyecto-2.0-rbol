@@ -23,6 +23,7 @@ namespace Proyecto_2_Arbol
         private Button btnEstadisticas;
         private Button btnEliminarArbol;
         private Button btnSalir;
+        private Button btnModoOscuro;
 
         // Panel donde se muestra el contenido central.
         private Panel panelContenido;
@@ -95,11 +96,12 @@ namespace Proyecto_2_Arbol
             btnMapa = CreateMenuButton("🗺️ Ver Mapa");
             btnEstadisticas = CreateMenuButton("📊 Estadísticas");
             btnEliminarArbol = CreateMenuButton("🧹 Eliminar árbol");
+            btnModoOscuro = CreateMenuButton("🌙 Modo Oscuro");
             btnSalir = CreateMenuButton("🚪 Salir");
 
             // Ubicación vertical de los botones dentro del panel lateral.
             int top = 130;
-            foreach (var boton in new[] { btnMapa, btnEstadisticas, btnEliminarArbol, btnSalir })
+            foreach (var boton in new[] { btnMapa, btnEstadisticas, btnEliminarArbol,btnModoOscuro, btnSalir })
             {
                 boton.Top = top;
                 boton.Left = 15;
@@ -111,6 +113,7 @@ namespace Proyecto_2_Arbol
             btnMapa.Click += BtnMapa_Click;
             btnEstadisticas.Click += BtnEstadisticas_Click;
             btnEliminarArbol.Click += BtnEliminarArbol_Click;
+            btnModoOscuro.Click += BtnModoOscuro_Click;
             btnSalir.Click += (s, e) => Close();
 
             Controls.Add(panelMenu);
@@ -199,6 +202,13 @@ namespace Proyecto_2_Arbol
                 estadisticasForm.ShowDialog(this);
             }
         }
+        private void BtnModoOscuro_Click(object? sender, EventArgs e)
+        {
+            Theme.ToggleMode();     // Cambiar modo claro/oscuro
+            ApplyTheme();           // Reaplicar colores
+            canvas.Invalidate();    // Redibujar el árbol
+        }
+
 
         // Cambia el fondo del botón cuando el puntero entra en el botón.
         private void HoverIn(object? sender, EventArgs e)

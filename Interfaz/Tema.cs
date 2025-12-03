@@ -1,33 +1,51 @@
-//Interfaz.Tema.cs
 using System.Drawing;
 
 namespace Proyecto_2_Arbol
 {
-    // Clase estática que centraliza los colores utilizados en la interfaz de la aplicación.
     public static class Theme
     {
-        // Color de fondo principal de las ventanas.
-        public static Color BgMain => ColorTranslator.FromHtml("#F4F6FA");
+        public static bool DarkMode { get; private set; } = false;
 
-        // Color de fondo del panel lateral de menú.
-        public static Color BgPane => ColorTranslator.FromHtml("#283142");
+        // Cambia entre modo claro y oscuro
+        public static void ToggleMode()
+        {
+            DarkMode = !DarkMode;
+        }
 
-        // Color base de los botones.
-        public static Color Btn => ColorTranslator.FromHtml("#4C6EF5");
+        // =======================
+        // PALETA – MODO CLARO
+        // =======================
+        private static readonly Color LightBgMain = ColorTranslator.FromHtml("#F4F6FA");
+        private static readonly Color LightBgPane = ColorTranslator.FromHtml("#283142");
+        private static readonly Color LightBtn = ColorTranslator.FromHtml("#4C6EF5");
+        private static readonly Color LightBtnHover = ColorTranslator.FromHtml("#3B5BDB");
+        private static readonly Color LightTextPrimary = Color.Black;
+        private static readonly Color LightTextOnPane = Color.White;
+        private static readonly Color LightCard = Color.White;
+        private static readonly Color LightLine = ColorTranslator.FromHtml("#C9D1D9");
 
-        // Color de los botones cuando el puntero pasa por encima.
-        public static Color BtnHover => ColorTranslator.FromHtml("#3B5BDB");
+        // =======================
+        // PALETA – MODO OSCURO
+        // =======================
+        private static readonly Color DarkBgMain = ColorTranslator.FromHtml("#0D1117");
+        private static readonly Color DarkBgPane = ColorTranslator.FromHtml("#161B22");
+        private static readonly Color DarkBtn = ColorTranslator.FromHtml("#238636");
+        private static readonly Color DarkBtnHover = ColorTranslator.FromHtml("#2EA043");
+        private static readonly Color DarkTextPrimary = Color.White;
+        private static readonly Color DarkTextOnPane = Color.White;
+        private static readonly Color DarkCard = ColorTranslator.FromHtml("#21262D");
+        private static readonly Color DarkLine = ColorTranslator.FromHtml("#30363D");
 
-        // Color principal del texto sobre fondos claros.
-        public static Color TextPrimary => Color.Black;
-
-        // Color del texto que se muestra sobre el panel lateral oscuro.
-        public static Color TextOnPane => Color.White;
-
-        // Color de fondo de tarjetas o paneles internos.
-        public static Color Card => Color.White;
-
-        // Color de líneas de separación o bordes suaves.
-        public static Color Line => ColorTranslator.FromHtml("#C9D1D9");
+        // =====================
+        // PROPIEDADES PÚBLICAS
+        // =====================
+        public static Color BgMain => DarkMode ? DarkBgMain : LightBgMain;
+        public static Color BgPane => DarkMode ? DarkBgPane : LightBgPane;
+        public static Color Btn => DarkMode ? DarkBtn : LightBtn;
+        public static Color BtnHover => DarkMode ? DarkBtnHover : LightBtnHover;
+        public static Color TextPrimary => DarkMode ? DarkTextPrimary : LightTextPrimary;
+        public static Color TextOnPane => DarkMode ? DarkTextOnPane : LightTextOnPane;
+        public static Color Card => DarkMode ? DarkCard : LightCard;
+        public static Color Line => DarkMode ? DarkLine : LightLine;
     }
 }

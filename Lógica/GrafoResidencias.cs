@@ -33,14 +33,13 @@ namespace Proyecto_2_Arbol
         // ==========================================================
         public void ConstruirGrafoDesdeArbol(ArbolGenealogico arbol)
         {
-            // Limpiar nodos actuales
             var arr = nodos.AArray();
             nodos.Clear();
 
             if (arbol.Raiz == null)
                 return;
 
-            var cola = new Queue<Familiar>();
+            var cola = new Cola<Familiar>();
             cola.Enqueue(arbol.Raiz);
 
             while (cola.Count > 0)
@@ -48,7 +47,6 @@ namespace Proyecto_2_Arbol
                 var actual = cola.Dequeue();
                 AgregarNodo(actual);
 
-                // Hijos
                 var hijo = actual.PrimerHijo;
                 while (hijo != null)
                 {
@@ -56,7 +54,6 @@ namespace Proyecto_2_Arbol
                     hijo = hijo.HermanoDerecho;
                 }
 
-                // Pareja
                 if (actual.Pareja != null)
                 {
                     if (!nodos.Contiene(actual.Pareja))
@@ -65,7 +62,6 @@ namespace Proyecto_2_Arbol
                         AgregarNodo(actual.Pareja);
                     }
                 }
-
             }
 
             RecalcularMatriz();
@@ -96,17 +92,11 @@ namespace Proyecto_2_Arbol
             }
         }
 
-        // ==========================================================
-        // OBTENER TODOS LOS FAMILIARES
-        // ==========================================================
         public Familiar[] ObtenerTodosLosFamiliares()
         {
             return nodos.AArray();
         }
 
-        // ==========================================================
-        // OBTENER DISTANCIA ENTRE DOS NODOS
-        // ==========================================================
         public double ObtenerDistancia(Familiar a, Familiar b)
         {
             var arr = nodos.AArray();
@@ -119,9 +109,6 @@ namespace Proyecto_2_Arbol
             return matrizDistancias[i, j];
         }
 
-        // ==========================================================
-        // PAR MÁS LEJANO
-        // ==========================================================
         public (Familiar A, Familiar B, double Distancia) ParMasLejano()
         {
             var arr = nodos.AArray();
@@ -147,9 +134,6 @@ namespace Proyecto_2_Arbol
             return (f1!, f2!, max);
         }
 
-        // ==========================================================
-        // PAR MÁS CERCANO
-        // ==========================================================
         public (Familiar A, Familiar B, double Distancia) ParMasCercano()
         {
             var arr = nodos.AArray();
@@ -175,9 +159,6 @@ namespace Proyecto_2_Arbol
             return (f1!, f2!, min);
         }
 
-        // ==========================================================
-        // DISTANCIA PROMEDIO
-        // ==========================================================
         public double DistanciaPromedio()
         {
             var arr = nodos.AArray();
@@ -199,8 +180,9 @@ namespace Proyecto_2_Arbol
 
             return suma / total;
         }
+
         // =============================
-        // DIJKSTRA: Distancia mínima entre dos familiares
+        // DIJKSTRA: Distancia mínima
         // =============================
         public double DistanciaMinima(Familiar origen, Familiar destino)
         {
@@ -221,13 +203,11 @@ namespace Proyecto_2_Arbol
 
             dist[start] = 0;
 
-            // Dijkstra tradicional
             for (int iter = 0; iter < n - 1; iter++)
             {
                 int u = -1;
                 double min = double.PositiveInfinity;
 
-                // Elegir nodo no visitado con menor distancia
                 for (int i = 0; i < n; i++)
                 {
                     if (!visitado[i] && dist[i] < min)
@@ -242,7 +222,6 @@ namespace Proyecto_2_Arbol
 
                 visitado[u] = true;
 
-                // Relajación
                 for (int v = 0; v < n; v++)
                 {
                     if (!visitado[v])
@@ -259,9 +238,8 @@ namespace Proyecto_2_Arbol
             return dist[end];
         }
 
-
         // =============================
-        // DIJKSTRA: Obtener el camino completo entre dos familiares
+        // CAMINO MÍNIMO usando ListaEnlazada
         // =============================
         public Familiar[] CaminoMinimo(Familiar origen, Familiar destino)
         {
@@ -320,20 +298,26 @@ namespace Proyecto_2_Arbol
                 }
             }
 
-            // Reconstrucción del camino
-            var camino = new List<Familiar>();
+            // ============================
+            // RECONSTRUCCIÓN DEL CAMINO
+            // ============================
+
+            var camino = new ListaEnlazada<Familiar>();
             int actual = end;
 
             while (actual != -1)
             {
-                camino.Add(arr[actual]);
+                camino.Agregar(arr[actual]);
                 actual = previo[actual];
             }
 
-            camino.Reverse();
-            return camino.ToArray();
-        }
+            // Convertimos a arreglo
+            var resultado = camino.AArray();
 
+            // Invertimos manualmente el camino
+            Array.Reverse(resultado);
+
+            return resultado;
+        }
     }
-    
 }

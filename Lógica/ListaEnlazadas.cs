@@ -1,7 +1,10 @@
 // Archivo: ListaEnlazada.cs
-// Implementación propia de una lista enlazada simple desde cero.
+// Implementación propia de una lista enlazada desde cero,
+// ampliada para soportar foreach, indexación, inserciones, eliminación, etc.
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Proyecto_2_Arbol
 {
@@ -17,7 +20,7 @@ namespace Proyecto_2_Arbol
         }
     }
 
-    public class ListaEnlazada<T>
+    public class ListaEnlazada<T> : IEnumerable<T>
     {
         private NodoLista<T>? cabeza;
         private int cantidad;
@@ -30,7 +33,9 @@ namespace Proyecto_2_Arbol
 
         public int Count => cantidad;
 
-        // Agregar un elemento al final de la lista
+        // ============================================================
+        // AGREGAR AL FINAL
+        // ============================================================
         public void Agregar(T item)
         {
             var nuevo = new NodoLista<T>(item);
@@ -42,7 +47,7 @@ namespace Proyecto_2_Arbol
             else
             {
                 var actual = cabeza;
-                while (actual.Siguiente != null)
+                while (actual!.Siguiente != null)
                     actual = actual.Siguiente;
 
                 actual.Siguiente = nuevo;
@@ -51,7 +56,97 @@ namespace Proyecto_2_Arbol
             cantidad++;
         }
 
-        // Verifica si un valor ya existe en la lista (Comparación por referencia)
+        // ============================================================
+        // INSERTAR EN POSICIÓN
+        // ============================================================
+        public void InsertAt(int index, T item)
+        {
+            if (index < 0 || index > cantidad)
+                throw new IndexOutOfRangeException();
+
+            var nuevo = new NodoLista<T>(item);
+
+            if (index == 0)
+            {
+                nuevo.Siguiente = cabeza;
+                cabeza = nuevo;
+            }
+            else
+            {
+                var actual = cabeza;
+                for (int i = 0; i < index - 1; i++)
+                    actual = actual!.Siguiente;
+
+                nuevo.Siguiente = actual!.Siguiente;
+                actual.Siguiente = nuevo;
+            }
+
+            cantidad++;
+        }
+
+        // ============================================================
+        // ELIMINAR EN POSICIÓN
+        // ============================================================
+        public void RemoveAt(int index)
+        {
+            if (index < 0 || index >= cantidad)
+                throw new IndexOutOfRangeException();
+
+            if (index == 0)
+            {
+                cabeza = cabeza!.Siguiente;
+            }
+            else
+            {
+                var actual = cabeza;
+                for (int i = 0; i < index - 1; i++)
+                    actual = actual!.Siguiente;
+
+                actual!.Siguiente = actual.Siguiente!.Siguiente;
+            }
+
+            cantidad--;
+        }
+
+        // ============================================================
+        // BUSCAR ÍNDICE DE VALOR
+        // ============================================================
+        public int IndexOf(T item)
+        {
+            int i = 0;
+            var actual = cabeza;
+
+            while (actual != null)
+            {
+                if (Equals(actual.Valor, item))
+                    return i;
+
+                actual = actual.Siguiente;
+                i++;
+            }
+
+            return -1;
+        }
+
+        // ============================================================
+        // CONTAINS POR VALOR
+        // ============================================================
+        public bool ContainsValue(T item)
+        {
+            var actual = cabeza;
+            while (actual != null)
+            {
+                if (Equals(actual.Valor, item))
+                    return true;
+
+                actual = actual.Siguiente;
+            }
+            return false;
+        }
+
+        // ============================================================
+        // CONTAINS POR REFERENCIA (tu versión original)
+        // ============================================================
         public bool Contiene(T item)
         {
             var actual = cabeza;
@@ -65,7 +160,9 @@ namespace Proyecto_2_Arbol
             return false;
         }
 
-        // Obtener elemento por índice
+        // ============================================================
+        // GET POR ÍNDICE (tu versión original)
+        // ============================================================
         public T Get(int index)
         {
             if (index < 0 || index >= cantidad)
@@ -79,32 +176,103 @@ namespace Proyecto_2_Arbol
                 if (i == index)
                     return actual.Valor;
 
-                i++;
                 actual = actual.Siguiente;
+                i++;
             }
 
             throw new Exception("Error inesperado en la lista.");
         }
 
-        // Convertir lista a array para recorridos
+        // ============================================================
+        // INDEXADOR (permite grupo[0], grupo[1], etc.)
+        // ============================================================
+        public T this[int index]
+        {
+            get => Get(index);
+            set
+            {
+                if (index < 0 || index >= cantidad)
+                    throw new IndexOutOfRangeException();
+
+                int i = 0;
+                var actual = cabeza;
+
+                while (actual != null)
+                {
+                    if (i == index)
+                    {
+                        actual.Valor = value;
+                        return;
+                    }
+                    actual = actual.Siguiente;
+                    i++;
+                }
+            }
+        }
+
+        // ============================================================
+        // REVERSE (invierte la lista)
+        // ============================================================
+        public void Reverse()
+        {
+            NodoLista<T>? prev = null;
+            var actual = cabeza;
+
+            while (actual != null)
+            {
+                var siguiente = actual.Siguiente;
+                actual.Siguiente = prev;
+                prev = actual;
+                actual = siguiente;
+            }
+
+            cabeza = prev;
+        }
+
+        // ============================================================
+        // ToArray()
+        // ============================================================
         public T[] AArray()
         {
-            T[] array = new T[cantidad];
+            T[] arr = new T[cantidad];
             var actual = cabeza;
             int i = 0;
 
             while (actual != null)
             {
-                array[i++] = actual.Valor;
+                arr[i++] = actual.Valor;
                 actual = actual.Siguiente;
             }
 
-            return array;
+            return arr;
         }
+
+        // ============================================================
+        // CLEAR
+        // ============================================================
         public void Clear()
         {
             cabeza = null;
             cantidad = 0;
+        }
+
+        // ============================================================
+        // IEnumerable<T> → permite foreach sin usar List<>
+        // ============================================================
+        public IEnumerator<T> GetEnumerator()
+        {
+            var actual = cabeza;
+
+            while (actual != null)
+            {
+                yield return actual.Valor;
+                actual = actual.Siguiente;
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }
