@@ -1,7 +1,3 @@
-// Interfaz.DibujarArbol.cs
-// Archivo: DibujarArbol.cs
-// Lienzo donde se dibuja el árbol genealógico en la interfaz.
-
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -11,31 +7,18 @@ using System.Windows.Forms;
 
 namespace Proyecto_2_Arbol
 {
-    // Control que pinta los nodos del árbol y responde a los clics del usuario.
     public class TreeCanvas : Control
     {
-        // Referencia al árbol de la parte de lógica.
         private readonly ArbolGenealogico arbol;
 
-        // Lista de nodos tal y como se dibujan en pantalla.
-        private readonly List<NodoVisual> nodosVisuales = new List<NodoVisual>();
+        private readonly ListaEnlazada<NodoVisual> nodosVisuales = new ListaEnlazada<NodoVisual>();
 
-        // Guarda el desplazamiento actual del árbol para poder moverlo con el mouse.
         private Point desplazamiento = Point.Empty;
-
-        // Indica si estoy arrastrando el árbol con el mouse.
         private bool arrastrando = false;
-
-        // Guarda la última posición del mouse mientras arrastro.
         private Point ultimoMouse;
-
-        // Marca si durante el arrastre realmente se movió el mouse.
         private bool arrastreConMovimiento = false;
-
-        // Marca que debo ignorar el próximo clic izquierdo porque fue parte de un arrastre.
         private bool omitirProximoClickIzquierdo = false;
 
-        // Representación visual de un familiar en el lienzo.
         private class NodoVisual
         {
             public Familiar Familiar { get; }
@@ -49,7 +32,6 @@ namespace Proyecto_2_Arbol
                 Radio = radio;
             }
 
-            // Revisa si el punto del clic está dentro del círculo.
             public bool ContienePunto(Point p)
             {
                 int dx = p.X - Centro.X;
@@ -58,7 +40,6 @@ namespace Proyecto_2_Arbol
             }
         }
 
-        // Estructura interna para el recorrido por niveles.
         private struct NodoNivel
         {
             public Familiar Familiar;
@@ -81,7 +62,6 @@ namespace Proyecto_2_Arbol
             ForeColor = Theme.TextPrimary;
         }
 
-        // Redibuja el contenido del control.
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
@@ -101,12 +81,10 @@ namespace Proyecto_2_Arbol
             DibujarArbol(g);
         }
 
-        // Maneja el inicio del arrastre para mover el árbol.
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
 
-            // Aquí empiezo a arrastrar el árbol con el botón izquierdo.
             if (e.Button == MouseButtons.Left)
             {
                 arrastrando = true;
@@ -115,7 +93,6 @@ namespace Proyecto_2_Arbol
             }
         }
 
-        // Maneja el movimiento del mouse mientras se arrastra el árbol.
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
@@ -128,22 +105,17 @@ namespace Proyecto_2_Arbol
 
             if (dx != 0 || dy != 0)
             {
-                // Aquí marco que sí hubo movimiento real.
                 arrastreConMovimiento = true;
 
-                // Actualiza el desplazamiento según lo que se movió el mouse.
                 desplazamiento.X += dx;
                 desplazamiento.Y += dy;
 
-                // Actualiza la referencia del mouse.
                 ultimoMouse = e.Location;
 
-                // Redibuja el árbol ya con la nueva posición.
                 Invalidate();
             }
         }
 
-        // Maneja el final del arrastre.
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
@@ -151,8 +123,6 @@ namespace Proyecto_2_Arbol
             if (!arrastrando)
                 return;
 
-            // Si el arrastre fue con el botón izquierdo y sí se movió,
-            // entonces no quiero que se dispare el clic normal.
             if (arrastreConMovimiento && e.Button == MouseButtons.Left)
             {
                 omitirProximoClickIzquierdo = true;
@@ -161,10 +131,8 @@ namespace Proyecto_2_Arbol
             arrastrando = false;
         }
 
-        // Manejo de clics para crear el primer familiar, agregar hijo/pareja o ver la información.
         protected override void OnMouseClick(MouseEventArgs e)
         {
-            // Si vengo de un arrastre con el botón izquierdo, ignoro este clic.
             if (e.Button == MouseButtons.Left && omitirProximoClickIzquierdo)
             {
                 omitirProximoClickIzquierdo = false;
@@ -173,7 +141,6 @@ namespace Proyecto_2_Arbol
 
             base.OnMouseClick(e);
 
-            // Clic derecho: ver información del familiar.
             if (e.Button == MouseButtons.Right)
             {
                 if (!arbol.TieneMiembros)
@@ -181,7 +148,6 @@ namespace Proyecto_2_Arbol
 
                 NodoVisual? seleccionadoDerecho = null;
 
-                // Busca el nodo sobre el que hice clic derecho.
                 foreach (var nodo in nodosVisuales)
                 {
                     if (nodo.ContienePunto(e.Location))
@@ -202,11 +168,9 @@ namespace Proyecto_2_Arbol
                 return;
             }
 
-            // De aquí en adelante es el comportamiento original del clic izquierdo.
             if (e.Button != MouseButtons.Left)
                 return;
 
-            // Si aún no hay miembros, cualquier clic crea el primero.
             if (!arbol.TieneMiembros)
             {
                 using (var ventana = new GestionarFamilia(arbol, null, true))
@@ -217,7 +181,6 @@ namespace Proyecto_2_Arbol
                 return;
             }
 
-            // Buscar si se hizo clic sobre algún nodo.
             NodoVisual? seleccionado = null;
             foreach (var nodo in nodosVisuales)
             {
@@ -228,7 +191,6 @@ namespace Proyecto_2_Arbol
                 }
             }
 
-            // Si se hizo clic en un familiar, se abre la ventana para agregar hijo o pareja.
             if (seleccionado != null)
             {
                 using (var ventana = new GestionarFamilia(arbol, seleccionado.Familiar, false))
@@ -239,7 +201,6 @@ namespace Proyecto_2_Arbol
             }
         }
 
-        // Mensaje cuando todavía no se ha registrado ningún familiar.
         private void DibujarMensajeSinDatos(Graphics g)
         {
             using var fuente = new Font("Segoe UI", 11, FontStyle.Italic);
@@ -255,7 +216,6 @@ namespace Proyecto_2_Arbol
             g.DrawString(texto, fuente, pincel, x, y);
         }
 
-        // Calcula niveles, acomoda parejas juntas y dibuja todo el árbol.
         private void DibujarArbol(Graphics g)
         {
             if (arbol.Raiz == null)
@@ -263,7 +223,6 @@ namespace Proyecto_2_Arbol
 
             var niveles = CalcularNiveles();
 
-            // Primero ubicamos la posición de todos los nodos.
             int indiceNivel = 0;
             foreach (var kvp in niveles)
             {
@@ -282,7 +241,6 @@ namespace Proyecto_2_Arbol
                     {
                         var fam = grupo[0];
 
-                        // Aplica el desplazamiento al centro del nodo.
                         var centro = new Point(
                             inicioX + desplazamiento.X,
                             yBase + desplazamiento.Y
@@ -296,16 +254,8 @@ namespace Proyecto_2_Arbol
                         var fam1 = grupo[0];
                         var fam2 = grupo[1];
 
-                        // Aplica el desplazamiento a cada miembro de la pareja.
-                        var centro1 = new Point(
-                            inicioX - separacion / 2 + desplazamiento.X,
-                            yBase + desplazamiento.Y
-                        );
-
-                        var centro2 = new Point(
-                            inicioX + separacion / 2 + desplazamiento.X,
-                            yBase + desplazamiento.Y
-                        );
+                        var centro1 = new Point(inicioX - separacion / 2 + desplazamiento.X, yBase + desplazamiento.Y);
+                        var centro2 = new Point(inicioX + separacion / 2 + desplazamiento.X, yBase + desplazamiento.Y);
 
                         AgregarNodoVisualSiNoExiste(fam1, centro1);
                         AgregarNodoVisualSiNoExiste(fam2, centro2);
@@ -316,7 +266,6 @@ namespace Proyecto_2_Arbol
 
                         foreach (var fam in grupo)
                         {
-                            // Aplica el desplazamiento a los grupos grandes.
                             var centro = new Point(
                                 xGrupo + desplazamiento.X,
                                 yBase + desplazamiento.Y
@@ -333,17 +282,14 @@ namespace Proyecto_2_Arbol
                 indiceNivel++;
             }
 
-            // Luego se dibujan las conexiones (parejas e hijos).
             DibujarConexiones(g);
 
-            // Por último los círculos con la foto y los nombres.
             foreach (var nodo in nodosVisuales)
             {
                 DibujarNodo(g, nodo);
             }
         }
 
-        // Agrega un NodoVisual si aún no existe para ese familiar.
         private void AgregarNodoVisualSiNoExiste(Familiar fam, Point centro)
         {
             foreach (var n in nodosVisuales)
@@ -355,13 +301,12 @@ namespace Proyecto_2_Arbol
                 }
             }
 
-            nodosVisuales.Add(new NodoVisual(fam, centro, 35));
+            nodosVisuales.Agregar(new NodoVisual(fam, centro, 35));
         }
 
-        // Agrupa los familiares de un nivel para que las parejas queden juntas.
-        private List<List<Familiar>> AgruparPorParejas(List<Familiar> familiaresNivel)
+        private ListaEnlazada<ListaEnlazada<Familiar>> AgruparPorParejas(ListaEnlazada<Familiar> familiaresNivel)
         {
-            var grupos = new List<List<Familiar>>();
+            var grupos = new ListaEnlazada<ListaEnlazada<Familiar>>();
             var usados = new HashSet<Familiar>();
 
             foreach (var fam in familiaresNivel)
@@ -370,16 +315,25 @@ namespace Proyecto_2_Arbol
                     continue;
 
                 if (fam.Pareja != null &&
-                    familiaresNivel.Contains(fam.Pareja) &&
+                    familiaresNivel.ContainsValue(fam.Pareja) &&
                     !usados.Contains(fam.Pareja))
                 {
-                    grupos.Add(new List<Familiar> { fam, fam.Pareja });
+                    var grupo = new ListaEnlazada<Familiar>();
+                    grupo.Agregar(fam);
+                    grupo.Agregar(fam.Pareja);
+
+                    grupos.Agregar(grupo);
+
                     usados.Add(fam);
                     usados.Add(fam.Pareja);
                 }
                 else
                 {
-                    grupos.Add(new List<Familiar> { fam });
+                    var grupo = new ListaEnlazada<Familiar>();
+                    grupo.Agregar(fam);
+
+                    grupos.Agregar(grupo);
+
                     usados.Add(fam);
                 }
             }
@@ -387,12 +341,11 @@ namespace Proyecto_2_Arbol
             return grupos;
         }
 
-        // Calcula el nivel (generación) de cada familiar a partir de la raíz.
-        private Dictionary<int, List<Familiar>> CalcularNiveles()
+        private Dictionary<int, ListaEnlazada<Familiar>> CalcularNiveles()
         {
-            var niveles = new Dictionary<int, List<Familiar>>();
+            var niveles = new Dictionary<int, ListaEnlazada<Familiar>>();
             var visitados = new HashSet<Familiar>();
-            var cola = new Queue<NodoNivel>();
+            var cola = new Cola<NodoNivel>();
 
             if (arbol.Raiz == null)
                 return niveles;
@@ -407,10 +360,10 @@ namespace Proyecto_2_Arbol
                 int nivel = actual.Nivel;
 
                 if (!niveles.ContainsKey(nivel))
-                    niveles[nivel] = new List<Familiar>();
+                    niveles[nivel] = new ListaEnlazada<Familiar>();
 
-                if (!niveles[nivel].Contains(fam))
-                    niveles[nivel].Add(fam);
+                if (!niveles[nivel].ContainsValue(fam))
+                    niveles[nivel].Agregar(fam);
 
                 var hijo = fam.PrimerHijo;
                 while (hijo != null)
@@ -434,7 +387,6 @@ namespace Proyecto_2_Arbol
             return niveles;
         }
 
-        // Dibuja líneas entre parejas y desde la pareja (o el padre) hacia los hijos.
         private void DibujarConexiones(Graphics g)
         {
             if (nodosVisuales.Count == 0)
@@ -442,18 +394,14 @@ namespace Proyecto_2_Arbol
 
             var mapa = new Dictionary<Familiar, NodoVisual>();
             foreach (var nodo in nodosVisuales)
-            {
                 mapa[nodo.Familiar] = nodo;
-            }
 
-            // Colores de familia de sangre y familia política (mismos que en el borde).
-            Color bordePrincipal = Color.FromArgb(0, 153, 51); // verde fuerte
-            Color bordePolitica = Color.FromArgb(192, 64, 0);  // naranja rojizo
+            Color bordePrincipal = Color.FromArgb(0, 153, 51);
+            Color bordePolitica = Color.FromArgb(192, 64, 0);
 
-            using var penPareja = new Pen(Theme.Line, 2);            // gris: pareja y uniones de política
-            using var penConsanguineo = new Pen(bordePrincipal, 3);  // verde: descendencia de sangre
+            using var penPareja = new Pen(Theme.Line, 2);
+            using var penConsanguineo = new Pen(bordePrincipal, 3);
 
-            // Línea horizontal entre parejas (gris).
             var parejasMarcadas = new HashSet<Familiar>();
             foreach (var nodo in nodosVisuales)
             {
@@ -469,7 +417,6 @@ namespace Proyecto_2_Arbol
                 }
             }
 
-            // Líneas hacia los hijos.
             foreach (var nodoHijo in nodosVisuales)
             {
                 var hijo = nodoHijo.Familiar;
@@ -484,37 +431,26 @@ namespace Proyecto_2_Arbol
                 if (hijo.Progenitor.Pareja != null &&
                     mapa.TryGetValue(hijo.Progenitor.Pareja, out var nodoParejaH))
                 {
-                    // Punto de unión entre la pareja.
                     int unionX = (nodoPadre.Centro.X + nodoParejaH.Centro.X) / 2;
                     int unionY = nodoPadre.Centro.Y + nodoPadre.Radio + 6;
 
                     var puntoUnion = new Point(unionX, unionY);
 
-                    // Desde el punto de unión a cada integrante:
-                    //   - verde si es familia de sangre
-                    //   - gris si es familia política
                     var penPadreUnion = nodoPadre.Familiar.EsFamiliaPolitica ? penPareja : penConsanguineo;
                     var penParejaUnion = nodoParejaH.Familiar.EsFamiliaPolitica ? penPareja : penConsanguineo;
 
-                    g.DrawLine(
-                        penPadreUnion,
+                    g.DrawLine(penPadreUnion,
                         new Point(nodoPadre.Centro.X, nodoPadre.Centro.Y + nodoPadre.Radio),
-                        puntoUnion
-                    );
+                        puntoUnion);
 
-                    g.DrawLine(
-                        penParejaUnion,
+                    g.DrawLine(penParejaUnion,
                         new Point(nodoParejaH.Centro.X, nodoParejaH.Centro.Y + nodoParejaH.Radio),
-                        puntoUnion
-                    );
+                        puntoUnion);
 
-                    // Desde el punto de unión hacia el hijo siempre en verde
-                    // porque los hijos son parte de la familia de sangre.
                     origenSuperior = puntoUnion;
                 }
                 else
                 {
-                    // Solo hay un progenitor conocido: el tramo hacia el hijo es verde.
                     origenSuperior = new Point(
                         nodoPadre.Centro.X,
                         nodoPadre.Centro.Y + nodoPadre.Radio
@@ -530,21 +466,16 @@ namespace Proyecto_2_Arbol
             }
         }
 
-        // Dibuja el círculo del nodo, la foto y el nombre debajo.
         private void DibujarNodo(Graphics g, NodoVisual nodo)
         {
             int r = nodo.Radio;
             var rect = new Rectangle(nodo.Centro.X - r, nodo.Centro.Y - r, r * 2, r * 2);
 
-            // Colores para diferenciar familia principal y familia política.
-            Color bordePrincipal = Color.FromArgb(0, 153, 51); // verde fuerte
-            Color bordePolitica = Color.FromArgb(192, 64, 0);  // naranja rojizo
+            Color bordePrincipal = Color.FromArgb(0, 153, 51);
+            Color bordePolitica = Color.FromArgb(192, 64, 0);
 
-            Color colorBorde = nodo.Familiar.EsFamiliaPolitica
-                ? bordePolitica
-                : bordePrincipal;
+            Color colorBorde = nodo.Familiar.EsFamiliaPolitica ? bordePolitica : bordePrincipal;
 
-            // Intento de cargar la foto asociada al familiar.
             bool dibujoFoto = false;
             if (!string.IsNullOrWhiteSpace(nodo.Familiar.RutaFoto) &&
                 File.Exists(nodo.Familiar.RutaFoto))
@@ -561,36 +492,28 @@ namespace Proyecto_2_Arbol
 
                     dibujoFoto = true;
                 }
-                catch
-                {
-                    dibujoFoto = false;
-                }
+                catch { dibujoFoto = false; }
             }
 
-            // Si no hay foto válida, se dibuja un círculo de fondo.
             if (!dibujoFoto)
             {
                 using var relleno = new SolidBrush(Color.FromArgb(220, Theme.Btn));
                 g.FillEllipse(relleno, rect);
             }
 
-            // Borde grueso del círculo según el tipo de familiar.
             using (var borde = new Pen(colorBorde, 4))
             {
                 g.ResetClip();
                 g.DrawEllipse(borde, rect);
             }
 
-            // Texto del nombre debajo del nodo (ahora más pequeño).
             string nombre = nodo.Familiar.Nombre;
 
-            var estiloNombre = nodo.Familiar.EsFamiliaPolitica
-                ? FontStyle.Regular
-                : FontStyle.Underline;
+            var estiloNombre = nodo.Familiar.EsFamiliaPolitica ? FontStyle.Regular : FontStyle.Underline;
 
-            // Tamaño de fuente reducido a 7.
             using var fuenteNombre = new Font("Segoe UI", 7, estiloNombre);
             using var pincelNombre = new SolidBrush(Theme.TextPrimary);
+
             var tamañoNombre = g.MeasureString(nombre, fuenteNombre);
             var puntoNombre = new PointF(
                 nodo.Centro.X - tamañoNombre.Width / 2f,

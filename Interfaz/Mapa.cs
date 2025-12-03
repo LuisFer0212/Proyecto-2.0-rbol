@@ -204,7 +204,7 @@ namespace Proyecto_2_Arbol
 
                 double dist = grafo.DistanciaMinima(seleccionado, otro);
 
-                msg += $"{otro.Nombre}: {dist:F2} km (Dijkstra)\n";
+                msg += $"{otro.Nombre}: {dist:F2} km\n";
 
                 var camino = grafo.CaminoMinimo(seleccionado, otro);
                 if (camino.Length < 2)
@@ -224,7 +224,7 @@ namespace Proyecto_2_Arbol
 
             mapa.Zoom++; mapa.Zoom--; // refrescar mapa
 
-            MessageBox.Show(msg, "Distancias (Dijkstra)", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show(msg, "Distancias", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private Button CrearBoton(string texto, int left, int top)
