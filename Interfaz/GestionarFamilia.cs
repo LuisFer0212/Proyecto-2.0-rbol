@@ -232,6 +232,24 @@ namespace Proyecto_2_Arbol
             };
             contenedor.Controls.Add(fotoPreview);
 
+            // Botón: Seleccionar ubicación en mapa
+            var btnBuscarUbicacion = new Button
+            {
+                Text = "Buscar ubicación en mapa",
+                Width = 250,
+                Height = 40,
+                BackColor = ColorTranslator.FromHtml("#4C6EF5"),
+                ForeColor = Color.White,
+                FlatStyle = FlatStyle.Flat,
+                Margin = new Padding(0, 10, 0, 10)
+            };
+            btnBuscarUbicacion.FlatAppearance.BorderSize = 0;
+
+            btnBuscarUbicacion.Click += BtnBuscarUbicacion_Click;
+
+            contenedor.Controls.Add(btnBuscarUbicacion);
+
+
             // Panel con los botones Guardar y Cancelar.
             var panelBotones = new Panel
             {
@@ -339,6 +357,21 @@ namespace Proyecto_2_Arbol
                 }
             }
         }
+        private void BtnBuscarUbicacion_Click(object? sender, EventArgs e)
+        {
+            using (var selector = new SelectorUbicacionForm())
+            {
+                if (selector.ShowDialog(this) == DialogResult.OK && selector.UbicacionSeleccionada)
+                {
+                    txtLatitud.Text = selector.LatitudSeleccionada
+                        .ToString(CultureInfo.InvariantCulture);
+
+                    txtLongitud.Text = selector.LongitudSeleccionada
+                        .ToString(CultureInfo.InvariantCulture);
+                }
+            }
+        }
+
 
         // Valida los datos del formulario y registra el familiar en el árbol.
         private void BtnGuardar_Click(object? sender, EventArgs e)
